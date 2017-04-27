@@ -5,10 +5,12 @@
   padding: 0;
   background-color: transparent;
   padding: 0 5px;
+  border: 0;
 }
 
 .emoji-picker__menu {
   @include card;
+  min-width: 190px;
   width: 190px;
   padding: 6px;
   position: absolute;

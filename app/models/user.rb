@@ -3,34 +3,32 @@ class User < ActiveRecord::Base
   include ReadableUnguessableUrls
   include MessageChannel
   include HasExperiences
+  include HasAvatar
+  include UsesWithoutScope
 
-  AVATAR_KINDS = %w[initials uploaded gravatar]
-  LARGE_IMAGE = 170
-  MED_LARGE_IMAGE = 70
-  MEDIUM_IMAGE = 50
-  SMALL_IMAGE = 30
   MAX_AVATAR_IMAGE_SIZE_CONST = 100.megabytes
 
-  devise :database_authenticatable, :recoverable, :registerable, :rememberable, :trackable, :omniauthable
+  devise :database_authenticatable, :recoverable, :registerable, :rememberable, :trackable, :omniauthable, :validatable
   attr_accessor :honeypot
+  attr_accessor :restricted
 
   validates :email, presence: true, uniqueness: true, email: true
   #validates :name, presence: true
   validates_inclusion_of :uses_markdown, in: [true,false]
 
+  has_many :stances, as: :participant
+
   has_attached_file :uploaded_avatar,
     styles: {
-              large: "#{User::LARGE_IMAGE}x#{User::LARGE_IMAGE}#",
-              medlarge: "#{User::MED_LARGE_IMAGE}x#{User::MED_LARGE_IMAGE}#",
-              medium: "#{User::MEDIUM_IMAGE}x#{User::MEDIUM_IMAGE}#",
-              small: "#{User::SMALL_IMAGE}x#{User::SMALL_IMAGE}#",
-            }
+      small:  "#{AVATAR_SIZES[:small]}x#{AVATAR_SIZES[:small]}#",
+      medium: "#{AVATAR_SIZES[:medium]}x#{AVATAR_SIZES[:medium]}#",
+      large:  "#{AVATAR_SIZES[:large]}x#{AVATAR_SIZES[:large]}#",
+    }
+
   validates_attachment :uploaded_avatar,
-    size: { in: 0..User::MAX_AVATAR_IMAGE_SIZE_CONST.kilobytes },
+    size: { in: 0..MAX_AVATAR_IMAGE_SIZE_CONST.kilobytes },
     content_type: { content_type: /\Aimage/ },
     file_name: { matches: [/png\Z/i, /jpe?g\Z/i, /gif\Z/i] }
-
-  validates_inclusion_of :avatar_kind, in: AVATAR_KINDS
 
   validates_uniqueness_of :username
   validates_length_of :username, maximum: 30
@@ -38,9 +36,6 @@ class User < ActiveRecord::Base
 
   validates_length_of :password, minimum: 8, allow_nil: true
   validates :password, nontrivial_password: true, allow_nil: true
-
-  include Gravtastic
-  gravtastic rating: :pg, default: :none
 
   has_many :contacts, dependent: :destroy
   has_many :admin_memberships,
@@ -86,12 +81,17 @@ class User < ActiveRecord::Base
            foreign_key: 'author_id',
            dependent: :destroy
 
+  has_many :polls, foreign_key: :author_id
+  has_many :communities, through: :polls, class_name: "Communities::Base"
+  has_many :visitors, through: :communities
+
   has_many :votes, dependent: :destroy
   has_many :comment_votes, dependent: :destroy
+  has_many :stances, as: :participant, dependent: :destroy
+  has_many :participated_polls, through: :stances, source: :poll
 
   has_many :discussion_readers, dependent: :destroy
   has_many :omniauth_identities, dependent: :destroy
-
 
   has_many :notifications, dependent: :destroy
   has_many :comments, dependent: :destroy
@@ -107,8 +107,6 @@ class User < ActiveRecord::Base
               :ensure_unsubscribe_token,
               :ensure_email_api_key
 
-  before_create :set_default_avatar_kind
-
   enum default_membership_volume: [:mute, :quiet, :normal, :loud]
 
   scope :active, -> { where(deactivated_at: nil) }
@@ -117,6 +115,7 @@ class User < ActiveRecord::Base
   scope :sorted_by_name, -> { order("lower(name)") }
   scope :admins, -> { where(is_admin: true) }
   scope :coordinators, -> { joins(:memberships).where('memberships.admin = ?', true).group('users.id') }
+  scope :mentioned_in, ->(model) { where(id: model.notifications.user_mentions.pluck(:user_id)) }
 
   # move to ThreadMailerQuery
   scope :email_when_proposal_closing_soon, -> { active.where(email_when_proposal_closing_soon: true) }
@@ -128,18 +127,12 @@ class User < ActiveRecord::Base
     where('users.email_when_proposal_closing_soon = ?', true)
   }
 
-  scope :without, -> (users) {
-    users = Array(users).compact
-
-    if users.size > 0
-      where('users.id NOT IN (?)', users)
-    else
-      all
-    end
-  }
-
   def user_id
     id
+  end
+
+  def participation_token
+    nil
   end
 
   def is_logged_in?
@@ -170,7 +163,11 @@ class User < ActiveRecord::Base
   end
 
   def is_member_of?(group)
-    memberships.where(group_id: group.id).any?
+    !!memberships.find_by(group_id: group&.id)
+  end
+
+  def is_admin_of?(group)
+    !!memberships.find_by(group_id: group&.id, admin: true)
   end
 
   def time_zone_city
@@ -186,7 +183,20 @@ class User < ActiveRecord::Base
   end
 
   def self.find_by_email(email)
-    User.where('lower(email) = ?', email.downcase).first
+    User.where('lower(email) = ?', email.to_s.downcase).first
+  end
+
+  def self.helper_bot
+    find_by(email: helper_bot_email) ||
+    create!(email: helper_bot_email,
+            name: 'Loomio Helper Bot',
+            password: SecureRandom.hex(20),
+            uses_markdown: true,
+            avatar_kind: :gravatar)
+  end
+
+  def self.helper_bot_email
+    ENV['HELPER_BOT_EMAIL'] || 'contact@loomio.org'
   end
 
   def subgroups
@@ -223,59 +233,24 @@ class User < ActiveRecord::Base
     super && !deactivated_at
   end
 
-  def avatar_url(size=nil)
-    size = size ? size.to_sym : :medium
-    case size
-    when :small
-      pixels = User::SMALL_IMAGE
-    when :medium
-      pixels = User::MEDIUM_IMAGE
-    when :"med-large"
-      pixels = User::MED_LARGE_IMAGE
-    when :large
-      pixels = User::LARGE_IMAGE
-    else
-      pixels = User::SMALL_IMAGE
-    end
-
-    if avatar_kind == "gravatar"
-      gravatar_url(:size => pixels)
-    else
-      uploaded_avatar.url(size)
-    end
-  end
-
   def locale
     selected_locale || detected_locale || I18n.default_locale
   end
 
-  def has_gravatar?(options = {})
-    return false if Rails.env.test?
-    hash = Digest::MD5.hexdigest(email.to_s.downcase)
-    options = { :rating => 'x', :timeout => 2 }.merge(options)
-    http = Net::HTTP.new('www.gravatar.com', 80)
-    http.read_timeout = options[:timeout]
-    response = http.request_head("/avatar/#{hash}?rating=#{options[:rating]}&default=http://gravatar.com/avatar")
-    response.code != '302'
-  rescue StandardError, Timeout::Error
-    false  # Don't show "gravatar" if the service is down or slow
-  end
-
   def generate_username
-    self.username ||= UsernameGenerator.new(self).generate
+    self.username ||= ::UsernameGenerator.new(self).generate
   end
 
   def send_devise_notification(notification, *args)
     I18n.with_locale(locale) { devise_mailer.send(notification, self, *args).deliver_now }
   end
 
-  private
-
-  def set_default_avatar_kind
-    if has_gravatar?
-      self.avatar_kind = "gravatar"
-    end
+  protected
+  def password_required?
+    !password.nil? || !password_confirmation.nil?
   end
+
+  private
 
   def ensure_email_api_key
     self.email_api_key ||= SecureRandom.hex(16)

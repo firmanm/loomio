@@ -41,13 +41,12 @@ ja:
   comment_form:
     delete_comment: コメントを削除します
     confirm_delete_message: 本当にコメントを削除しますか？
+  sidebar:
+    edit_profile: プロフィールを編集する
+    email_settings: Eメール設定
+    help: ヘルプ
+    sign_out: サインアウト
   navbar:
-    groups: グループ
-    user_options:
-      contact_us: 問い合わせをする
-      new_group: 新しいグループ
-      profile: プロフィール
-      help: ヘルプ
     search:
       placeholder: 検索
       discussions: ディスカッション
@@ -88,7 +87,6 @@ ja:
     heading: グループへの参加依頼
     name_label: 氏名
     email_label: Eメール
-    introduction_label: 自己紹介をしてください
     submit_button: グループへの参加依頼
   group_page:
     thread_list:
@@ -100,8 +98,6 @@ ja:
     options_label: オプション
     options:
       label: オプション
-    leave_group:
-      title: グループを離れます
   group_form:
     privacy: プライバシー
     submit_update: 設定更新
@@ -113,22 +109,21 @@ ja:
     name_label: 氏名
     coordinator_label: コーディネーター
     remove_member_label: 削除
-    remove_membership:
-      submit: 削除
   profile_page:
-    change_password:
-      current_password_label: 現在のパスワード
-      new_password_label: 新しいパスワード
-      password_confirmation_label: 新しいパスワードを再入力してください
     profile: プロフィール
     picture_label: 画像
     name_label: 氏名
     email_label: Eメール
     locale_label: 言語
   dashboard_page:
+    no_groups:
+      or: または
     threads_from:
       today: 本日
       yesterday: 昨日
+  inbox_page:
+    no_groups:
+      or: または
   thread_group:
     aria_label: グループ名
   delete_comment_dialog:
@@ -149,26 +144,12 @@ ja:
       ソフトウェアの使い方を学ぶのと同様に、あなたのグループはより効率的に協力して意思決定を行う新しいプロセスについても学びます。
       これはあなたのグループが成功するためのアドバイスです：
     different_ways: Loomioの様々な使い方
-    engaging_html: |
-      <h2>あなたのグループに参加するためのアドバイス</h2>
-      <p>卓上に魅力的な提案があれば、人はワクワクしながら飛び込んで参加し始めます。
-      良い提案はグループに対する行動の計画が含まれています。それは、自分の意見が賛成か反対かすぐにわかってもらうためです。
-      グループが自分たちでまたはメールなどで現在取りかかっているディスカッションや決定を、Loomioで行った方が簡単ではないですか？</p>
-      <p>グループがまだ始まったばかりの場合、皆にツールを使うチャンスを提供し意思決定プロセスが形になるのを見るために、
-      気楽な決定から始めることもできます。</p>
-      <p>ディスカッションにメンバー参加させるもう一つの簡単な方法は、特定の人を指定する@mention機能です；
-      これは、コメントでタグ付けされたことをその人にEメールで知らせます</p>
     example1_html: |
       <h3>幅広いトピックを議論し、共により良い解決をしていくグループが必要です</h3>
       <p>ストラテジー：提案を作成する少し前にトピックについて議論してください</p>
       <p>特定の解決策に飛び込む前に問題に関する理解を分かち合った場合、しばしば
       ディスカッションすることによって最高の結果にたどり着きます。
       人はプロセスに参加するとき、結果に賛成しうるものです。</p>
-    example2_html: |
-      <h3>すでに提案したいことが決まっており、進めるためにグループから正式な承認が欲しい</h3>
-      <p>ストラテジー：特定の意見に関してディスカッションを始めて、すぐに提案を作成します</p>
-      <p>明白な結果を持っているけれど批判的な懸念がないか確かめたい場合、意見に対する素早いインプットをもらうために提案を使うことができます</p>
-      <p>ドキュメントの完成、申し込みの認可、ちょっとした仕事の承認などができます</p>
     get_in_touch: ご連絡ください
     get_in_touch_description_html: "質問やフィードバックがアル場合は、<a href='%{link}'>お知らせください</a>"
     getting_started: 始めるには
@@ -224,12 +205,6 @@ ja:
     positions_disagree_description: '<span>反対</span>は、より良い代替案があると考えますがグループの決定を尊重することを意味します'
     positions_block_description: '<span>ブロック</span>は、真剣に異議を唱え、その提案が決定されることに対して納得がいかないことを意味します'
     start_discussion: ディスカッションを開始する
-    start_discussion_html: >
-      <p>ディスカッションを開始するときに、タイトルがトピックの内容を簡潔に伝えていることを確認してください。
-
-      グループが生産的で知識のあるディスカッションをするために必要なバックグラウンド情報を提供するには、コンテキストパネルを使ってください。</p>
-
-      <p>ディスカッションの間に新しい情報が出てきたら、コンテキストパネルをアップデートすることができます。このスペースは、トピックをはっきりと説明することと同様に、資料の共有やディスカッションの要約、グループが使っている意思決定プロトコルの概要を述べることにも使えます。</p>
     start_proposal: はっきりした提案を書く
     start_proposal_html: >
       <p>タイトルを明確で簡潔にすると、メンバーは賛成や反対が何を意味するか正確にわかります。</p>

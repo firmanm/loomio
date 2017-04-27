@@ -10,7 +10,7 @@ class Ability
   end
 
   def user_is_author_of?(object)
-    object.author_id == @user.id
+    @user.is_logged_in? && @user.id == object.author_id
   end
 
   def initialize(user)
@@ -25,7 +25,7 @@ class Ability
     end
 
     can :create, NetworkMembershipRequest do |request|
-      request.group.coordinators.include?(request.requestor) and
+      request.group.admins.include?(request.requestor) and
       request.group.is_parent? and
       !request.network.groups.include?(request.group)
     end
@@ -67,7 +67,7 @@ class Ability
 
     can :export, Group do |group|
       user.is_admin? or
-      (user_is_admin_of?(group.id) && group.enabled_beta_features.include?('export'))
+      (user_is_admin_of?(group.id) && group.features['dataExport'])
     end
 
     can [:members_autocomplete,
@@ -101,12 +101,10 @@ class Ability
       # otherwise, the group must be a subgroup
       # inwhich case we need to confirm membership and permission
 
+      group.is_parent? ||
       user.is_logged_in? &&
-      (
-        group.is_parent? ||
-        user_is_admin_of?(group.parent_id) ||
-        (user_is_member_of?(group.parent_id) && group.parent.members_can_create_subgroups?)
-      )
+      ( user_is_admin_of?(group.parent_id) ||
+        (user_is_member_of?(group.parent_id) && group.parent.members_can_create_subgroups?) )
     end
 
     can :join, Group do |group|
@@ -175,7 +173,7 @@ class Ability
 
     can [:show,
          :print,
-         :mark_as_read,
+         :dismiss,
          :subscribe_to], Discussion do |discussion|
       if discussion.archived_at.present?
         false
@@ -186,6 +184,10 @@ class Ability
         user_is_member_of?(discussion.group_id) or
         (discussion.group.parent_members_can_see_discussions? and user_is_member_of?(discussion.group.parent_id))
       end
+    end
+
+    can :mark_as_read, Discussion do |discussion|
+      @user.is_logged_in? && can?(:show, discussion)
     end
 
     can :update_version, Discussion do |discussion|
@@ -316,5 +318,64 @@ class Ability
       @user.is_logged_in?
     end
 
+    can :show, Communities::Base do |community|
+      community.polls.any? { |poll| @user.can? :share, poll }
+    end
+
+    can [:make_draft, :show], Poll do |poll|
+      user_is_author_of?(poll) ||
+      can?(:show, poll.discussion) ||
+      poll.communities.any? { |community| community.includes?(@user) }
+    end
+
+    can :create, Poll do |poll|
+      @user.is_logged_in? &&
+      (!poll.group || poll.group.community.includes?(@user))
+    end
+
+    can [:update, :share], Poll do |poll|
+      user_is_author_of?(poll) ||
+      Array(poll.group&.admins).include?(@user)
+    end
+
+    can :close, Poll do |poll|
+      poll.active? && (user_is_author_of?(poll) || user_is_admin_of?(poll.group_id))
+    end
+
+    can [:destroy], Visitor do |visitor|
+      @user.visitors.include?(visitor)
+    end
+
+    can [:create, :remind], Visitor do |visitor|
+      @user.communities.include?(visitor.community)
+    end
+
+    can :update, Visitor do |visitor|
+      @user.can?(:create, visitor) || @user.participation_token == visitor.participation_token
+    end
+
+    can :create, Stance do |stance|
+      poll = stance.poll
+      if !poll.active?
+        false
+      elsif poll.discussion
+        (poll.group.members_can_vote? && user_is_member_of?(poll.group_id)) ||
+        user_is_admin_of?(poll.group_id) ||
+        poll.communities.any? { |community| community.includes?(@user) }
+      else
+        user_is_author_of?(poll) || poll.communities.any? { |community| community.includes?(@user) }
+      end
+    end
+
+    can [:create, :update], Outcome do |outcome|
+      !outcome.poll.active? &&
+      user.ability.can?(:update, outcome.poll)
+    end
+
+    add_additional_abilities
+  end
+
+  def add_additional_abilities
+    # For plugins to add their own abilities
   end
 end

@@ -1,4 +1,8 @@
 class Events::NewMotion < Event
+  include Events::LiveUpdate
+  include Events::EmailUser
+  include Events::JoinDiscussion
+
   def self.publish!(motion)
     create(kind: "new_motion",
            eventable: motion,
@@ -6,11 +10,12 @@ class Events::NewMotion < Event
            created_at: motion.created_at).tap { |e| EventBus.broadcast('new_motion_event', e) }
   end
 
-  def group_key
-    discussion.group.key
-  end
+  private
 
-  def motion
-    eventable
+  def email_recipients
+    Queries::UsersByVolumeQuery.normal_or_loud(eventable.discussion)
+                               .without(eventable.author)
+                               .without(eventable.mentioned_group_members)
+
   end
 end

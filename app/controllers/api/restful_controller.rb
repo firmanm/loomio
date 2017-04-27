@@ -2,6 +2,7 @@ class API::RestfulController < ActionController::Base
   include ::LocalesHelper
   include ::ProtectedFromForgery
   include ::LoadAndAuthorize
+  include ::CurrentUserHelper
   before_filter :set_application_locale
   before_filter :set_paper_trail_whodunnit
   snorlax_used_rest!
@@ -20,20 +21,6 @@ class API::RestfulController < ActionController::Base
     service.destroy({resource_symbol => resource, actor: current_user})
   end
 
-  def current_user
-    super || token_user || restricted_user || LoggedOutUser.new
-  end
-
-  def token_user
-    return unless doorkeeper_token.present?
-    doorkeeper_render_error unless valid_doorkeeper_token?
-    @token_user ||= User.find(doorkeeper_token.resource_owner_id)
-  end
-
-  def restricted_user
-    @restricted_user ||= User.find_by(unsubscribe_token: params[:unsubscribe_token]) if params[:unsubscribe_token]
-  end
-
   def permitted_params
     @permitted_params ||= PermittedParams.new(params)
   end
@@ -48,18 +35,26 @@ class API::RestfulController < ActionController::Base
 
   def respond_with_resource(scope: default_scope, serializer: resource_serializer, root: serializer_root)
     if resource.errors.empty?
-      respond_with_collection resource_options(scope: scope, serializer: serializer, root: root)
+      respond_with_collection scope: scope, serializer: serializer, root: root
     else
       respond_with_errors
     end
   end
 
-  def resource_options(scope:, serializer:, root:)
-    if @event.is_a?(Event)
-      { resources: [@event], scope: scope, serializer: EventSerializer, root: :events }
+  def respond_with_collection(scope: default_scope, serializer: resource_serializer, root: serializer_root)
+    if events_to_serialize.any?
+      render json: EventCollection.new(events_to_serialize).serialize!(scope)
     else
-      { resources: [resource], scope: scope, serializer: serializer, root: root }
+      render json: resources_to_serialize, scope: scope, each_serializer: serializer, root: root
     end
   end
 
+  def events_to_serialize
+    return [] unless @event.is_a?(Event)
+    Array(@event)
+  end
+
+  def resources_to_serialize
+    Array(resource || collection)
+  end
 end

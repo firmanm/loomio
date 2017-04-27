@@ -7,7 +7,7 @@ describe UserMailer do
     end
 
     it 'renders the sender email' do
-      expect(@mail.from).to include 'notifications@loomio.example.org'
+      expect(@mail.from).to include BaseMailer::NOTIFICATIONS_EMAIL_ADDRESS
     end
   end
 
@@ -15,7 +15,9 @@ describe UserMailer do
     before :each do
       @user = create(:user)
       @group = create(:group)
-      @mail = UserMailer.group_membership_approved(@user, @group)
+      @membership = create(:membership, user: @user, group: @group)
+      @event = Events::MembershipRequestApproved.create(kind: 'membership_request_approved', user: @user, eventable: @membership)
+      @mail = UserMailer.membership_request_approved(@user, @event)
     end
 
     it_behaves_like 'email_meta'
@@ -25,7 +27,7 @@ describe UserMailer do
     end
 
     it 'renders the subject' do
-      expect(@mail.subject).to eq "[Loomio: #{@group.full_name}] Membership approved"
+      expect(@mail.subject).to eq "Your request to join #{@group.full_name} on Loomio has been approved"
     end
 
     it 'assigns confirmation_url for email body' do
@@ -39,11 +41,13 @@ describe UserMailer do
       @user = create(:user)
       @inviter = create(:user)
       @group = create(:group, full_name: "Group full name")
-      @mail = UserMailer.added_to_group(user: @user, inviter: @inviter, group: @group)
+      @membership = create(:membership, user: @user, group: @group, inviter: @inviter)
+      @event = Events::UserAddedToGroup.create(kind: 'user_added_to_group', user: @inviter, eventable: @membership)
+      @mail = UserMailer.user_added_to_group(@user, @event)
     end
 
     it 'renders the subject' do
-      expect(@mail.subject).to eq "#{@inviter.name} has added you to #{@group.full_name}"
+      expect(@mail.subject).to eq "#{@inviter.name} has added you to #{@group.full_name} on Loomio"
     end
 
     it 'uses group.full_name in the email body' do

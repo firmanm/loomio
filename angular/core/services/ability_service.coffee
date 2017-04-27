@@ -1,8 +1,14 @@
 angular.module('loomioApp').factory 'AbilityService', (AppConfig, Session) ->
   new class AbilityService
 
-    isLoggedIn: ->
-      Session.user().id? and ! Session.user().restricted?
+    isLoggedIn: =>
+      @isUser() and !Session.user().restricted?
+
+    isVisitor: ->
+      AppConfig.currentVisitorId?
+
+    isUser: ->
+      AppConfig.currentUserId?
 
     canAddComment: (thread) ->
       Session.user().isMemberOf(thread.group())
@@ -15,6 +21,10 @@ angular.module('loomioApp').factory 'AbilityService', (AppConfig, Session) ->
       !thread.hasActiveProposal() and
       (@canAdministerGroup(thread.group()) or
       (Session.user().isMemberOf(thread.group()) and thread.group().membersCanRaiseMotions))
+
+    canStartPoll: (group) ->
+      group and
+      (@canAdministerGroup(group) or Session.user().isMemberOf(group) and group.membersCanRaiseMotions)
 
     canEditThread: (thread) ->
       @canAdministerGroup(thread.group()) or
@@ -119,10 +129,16 @@ angular.module('loomioApp').factory 'AbilityService', (AppConfig, Session) ->
     canViewPrivateContent: (group) ->
       Session.user().isMemberOf(group)
 
+    canCreateContentFor: (group) ->
+      Session.user().isMemberOf(group)
+
     canViewMemberships: (group) ->
       Session.user().isMemberOf(group)
 
     canViewPreviousProposals: (group) ->
+      @canViewGroup(group)
+
+    canViewPreviousPolls: (group) ->
       @canViewGroup(group)
 
     canJoinGroup: (group) ->
@@ -135,10 +151,29 @@ angular.module('loomioApp').factory 'AbilityService', (AppConfig, Session) ->
       @canViewGroup(group) and
       !Session.user().isMemberOf(group)
 
+
     canTranslate: (model) ->
-      AppConfig.canTranslate and
-      Session.user().locale and
+      AppConfig.inlineTranslation.isAvailable? and
+      _.contains(AppConfig.inlineTranslation.supportedLangs, Session.user().locale) and
       Session.user().locale != model.author().locale
+
+    canSharePoll: (poll) ->
+      @canEditPoll(poll)
+
+    canEditPoll: (poll) ->
+      poll.isActive() and @canAdministerPoll(poll)
+
+    canSetPollOutcome: (poll) ->
+      poll.isClosed() and @canAdministerPoll(poll)
+
+    canAdministerPoll: (poll) ->
+      if poll.group()
+        (@canAdministerGroup(poll.group()) or (Session.user().isMemberOf(poll.group()) and Session.user().isAuthorOf(poll)))
+      else
+        Session.user().isAuthorOf(poll)
+
+    canClosePoll: (poll) ->
+      @canEditPoll(poll)
 
     requireLoginFor: (page) ->
       return false if @isLoggedIn()
@@ -150,5 +185,7 @@ angular.module('loomioApp').factory 'AbilityService', (AppConfig, Session) ->
              'profilePage',        \
              'authorizedAppsPage', \
              'registeredAppsPage', \
-             'registeredAppPage' then true
+             'registeredAppPage',  \
+             'pollsPage',          \
+             'startPollPage' then true
         else false

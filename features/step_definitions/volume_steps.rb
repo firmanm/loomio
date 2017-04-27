@@ -4,7 +4,6 @@ Given(/^Loud Larry is following everything in the group by email$/) do
                                    email_missed_yesterday: false,
                                    email_on_participation: false,
                                    email_when_proposal_closing_soon: false)
-
   @group.add_member!(@loud_larry).set_volume!(:loud)
 end
 
@@ -61,7 +60,7 @@ end
 
 When(/^I start a new discussion$/) do
   reset_mailer
-  @discussion = FactoryGirl.build :discussion, author: @user, group: @group
+  @discussion = FactoryGirl.build :discussion, author: @user, group: @group, make_announcement: true
   @event = DiscussionService.create(discussion: @discussion, actor: @discussion.author)
 end
 
@@ -123,12 +122,14 @@ Given(/^I am autofollowing new discussions in my group$/) do
   @user.memberships.find_by_group_id(@group.id).set_volume! :loud
 end
 
-When(/^I comment in the discussion$/) do
+When(/^I comment in the discussion I'm following on participation$/) do
+  @user.update_attribute(email_on_participation: true)
   @comment = FactoryGirl.build(:comment, discussion: @discussion, author: @user)
   CommentService.create(comment: @comment, actor: @user)
 end
 
-When(/^I like a comment in the discussion$/) do
+When(/^I like a comment in the discussion I'm following on participation$/) do
+  @user.update_attribute(email_on_participation: true)
   @comment = FactoryGirl.create(:comment, discussion: @discussion)
   CommentService.like(comment: @comment, actor: @user)
 end
@@ -330,7 +331,7 @@ When(/^I vote on the proposal$/) do
   @vote = FactoryGirl.build :vote, motion: @motion, user: @user
   @cast_vote_event = VoteService.create vote: @vote, actor: @user
 end
-  
+
 When(/^my proposal is about to close$/) do
   step 'I start a new discussion'
   @motion = FactoryGirl.build :motion, discussion: @discussion, author: @user

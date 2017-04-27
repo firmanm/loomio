@@ -7,6 +7,7 @@ describe API::DiscussionsController do
   let(:another_user) { create :user }
   let(:group) { create :group }
   let(:discussion) { create :discussion, group: group }
+  let(:poll) { create :poll, discussion: discussion }
   let(:reader) { DiscussionReader.for(user: user, discussion: discussion) }
   let(:another_discussion) { create :discussion }
   let(:comment) { create :comment, discussion: discussion}
@@ -66,7 +67,7 @@ describe API::DiscussionsController do
     context 'logged in' do
       before do
         sign_in user
-        reader.viewed!
+        reader.viewed!(reader.discussion.last_activity_at)
         group.add_member! another_user
       end
 
@@ -79,6 +80,14 @@ describe API::DiscussionsController do
       end
 
       it 'does not return read threads' do
+        get :inbox
+        json = JSON.parse(response.body)
+        expect(json['discussions']).to be_blank
+      end
+
+      it 'does not return dismissed threads' do
+        CommentService.create(comment: new_comment, actor: another_user)
+        DiscussionReader.for(discussion: discussion, user: user).dismiss!
         get :inbox
         json = JSON.parse(response.body)
         expect(json['discussions']).to be_blank
@@ -266,7 +275,7 @@ describe API::DiscussionsController do
     end
   end
 
-  describe 'mark_as_read' do
+  describe 'dismiss' do
     before { sign_in user }
 
     let(:reader) { DiscussionReader.for(user: user, discussion: discussion) }
@@ -278,39 +287,66 @@ describe API::DiscussionsController do
       reader.reload
     end
 
-    it "Marks context/discusion as read" do
-      patch :mark_as_read, id: discussion.key, sequence_id: 0
-      expect(reader.reload.last_read_at).to eq discussion.reload.last_activity_at
-      expect(reader.last_read_sequence_id).to eq 0
+    it "updates dismissed_at", focus: true do
+      patch :dismiss, id: discussion.key
       expect(response.status).to eq 200
+      expect(reader.reload.dismissed_at).to be_present
+    end
+  end
+
+  describe 'mark_as_read' do
+    let(:reader) { DiscussionReader.for(user: user, discussion: discussion) }
+
+    context 'signed out' do
+      it 'does not attempt to mark discussions as read while logged out' do
+        event = CommentService.create(comment: build(:comment, discussion: another_discussion), actor: another_discussion.author)
+        patch :mark_as_read, id: discussion.key, sequence_id: 0
+        expect(response.status).to eq 403
+      end
     end
 
-    it "Marks thread item as read" do
-      event = CommentService.create(comment: comment, actor: discussion.author)
-      patch :mark_as_read, id: discussion.key, sequence_id: event.reload.sequence_id
-      expect(reader.reload.last_read_at).to eq event.created_at
-      expect(reader.last_read_sequence_id).to eq 1
-      expect(response.status).to eq 200
-    end
+    context 'signed in' do
+      before do
+        sign_in user
+        group.add_admin! user
+        reader.update(volume: DiscussionReader.volumes[:normal])
+        reader.reload
+      end
 
-    it 'does not mark an inaccessible discussion as read' do
-      event = CommentService.create(comment: build(:comment, discussion: another_discussion), actor: another_discussion.author)
-      patch :mark_as_read, id: another_discussion.key, sequence_id: event.reload.sequence_id
-      expect(response.status).to eq 403
-      expect(reader.reload.last_read_sequence_id).to eq 0
-    end
+      it "Marks context/discusion as read" do
+        patch :mark_as_read, id: discussion.key, sequence_id: 0
+        expect(reader.reload.last_read_at).to eq discussion.reload.last_activity_at
+        expect(reader.last_read_sequence_id).to eq 0
+        expect(response.status).to eq 200
+      end
 
-    it 'responds with reader fields' do
-      event = CommentService.create(comment: comment, actor: discussion.author)
-      patch :mark_as_read, id: discussion.key, sequence_id: event.reload.sequence_id
-      json = JSON.parse(response.body)
-      reader.reload
+      it "Marks thread item as read" do
+        event = CommentService.create(comment: comment, actor: discussion.author)
+        patch :mark_as_read, id: discussion.key, sequence_id: event.reload.sequence_id
+        expect(reader.reload.last_read_at).to eq event.created_at
+        expect(reader.last_read_sequence_id).to eq 1
+        expect(response.status).to eq 200
+      end
 
-      expect(json['discussions'][0]['discussion_reader_id']).to eq reader.id
-      expect(json['discussions'][0]['discussion_reader_volume']).to eq reader.discussion_reader_volume
-      expect(json['discussions'][0]['starred']).to eq reader.starred
-      expect(json['discussions'][0]['last_read_sequence_id']).to eq reader.last_read_sequence_id
-      expect(json['discussions'][0]['participating']).to eq reader.participating
+      it 'does not mark an inaccessible discussion as read' do
+        event = CommentService.create(comment: build(:comment, discussion: another_discussion), actor: another_discussion.author)
+        patch :mark_as_read, id: another_discussion.key, sequence_id: event.reload.sequence_id
+        expect(response.status).to eq 403
+        expect(reader.reload.last_read_sequence_id).to eq 0
+      end
+
+      it 'responds with reader fields' do
+        event = CommentService.create(comment: comment, actor: discussion.author)
+        patch :mark_as_read, id: discussion.key, sequence_id: event.reload.sequence_id
+        json = JSON.parse(response.body)
+        reader.reload
+
+        expect(json['discussions'][0]['discussion_reader_id']).to eq reader.id
+        expect(json['discussions'][0]['discussion_reader_volume']).to eq reader.discussion_reader_volume
+        expect(json['discussions'][0]['starred']).to eq reader.starred
+        expect(json['discussions'][0]['last_read_sequence_id']).to eq reader.last_read_sequence_id
+        expect(json['discussions'][0]['participating']).to eq reader.participating
+      end
     end
   end
 
@@ -403,6 +439,14 @@ describe API::DiscussionsController do
           expect(discussions).to include four_months_ago.id
           expect(discussions).to_not include two_months_ago.id
         end
+
+        it 'responds with active polls' do
+          poll
+          get :index, group_id: group.id, format: :json
+          json = JSON.parse(response.body)
+          poll_ids = json['polls'].map { |p| p['id'] }
+          expect(poll_ids).to include poll.id
+        end
       end
     end
   end
@@ -477,12 +521,32 @@ describe API::DiscussionsController do
 
   describe 'update' do
     before { sign_in user }
+    let(:attachment) { create(:attachment) }
 
     context 'success' do
       it "updates a discussion" do
         post :update, id: discussion.id, discussion: discussion_params, format: :json
         expect(response).to be_success
         expect(discussion.reload.title).to eq discussion_params[:title]
+      end
+
+      it 'adds attachments' do
+        discussion_params[:attachment_ids] = attachment.id
+        post :update, id: discussion.id, discussion: discussion_params, format: :json
+        expect(discussion.reload.attachments).to include attachment
+        json = JSON.parse(response.body)
+        attachment_ids = json['attachments'].map { |a| a['id'] }
+        expect(attachment_ids).to include attachment.id
+      end
+
+      it 'removes attachments' do
+        attachment.update(attachable: discussion)
+        discussion_params[:attachment_ids] = []
+        post :update, id: discussion.id, discussion: discussion_params, format: :json
+        expect(discussion.reload.attachments).to be_empty
+        json = JSON.parse(response.body)
+        attachment_ids = json['attachments'].map { |a| a['id'] }
+        expect(attachment_ids).to_not include attachment.id
       end
     end
 
@@ -519,6 +583,17 @@ describe API::DiscussionsController do
         expect(Discussion.last).to be_present
       end
 
+      describe 'make_announcement' do
+        it 'does not email users for non-announcements' do
+          expect { post :create, discussion: discussion_params, format: :json }.to_not change { ActionMailer::Base.deliveries.count }
+        end
+
+        it 'makes an announcement' do
+          discussion_params[:make_announcement] = true
+          expect { post :create, discussion: discussion_params, format: :json }.to change { ActionMailer::Base.deliveries.count }.by(1)
+        end
+      end
+
       it 'responds with json' do
         post :create, discussion: discussion_params, format: :json
         json = JSON.parse(response.body)
@@ -537,6 +612,19 @@ describe API::DiscussionsController do
           author_id
           group_id
         ])
+      end
+
+      describe 'mentioning' do
+        it 'mentions appropriate users' do
+          group.add_member! another_user
+          discussion_params[:description] = "Hello, @#{another_user.username}!"
+          expect { post :create, discussion: discussion_params, format: :json }.to change { Event.where(kind: :user_mentioned).count }.by(1)
+        end
+
+        it 'does not mention users not in the group' do
+          discussion_params[:description] = "Hello, @#{another_user.username}!"
+          expect { post :create, discussion: discussion_params, format: :json }.to_not change { Event.where(kind: :user_mentioned).count }
+        end
       end
     end
 

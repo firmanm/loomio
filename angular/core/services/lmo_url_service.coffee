@@ -18,11 +18,14 @@ angular.module('loomioApp').factory 'LmoUrlService', (AppConfig) ->
     discussion: (d, params = {}, options = {}) ->
       @buildModelRoute('d', d.key, d.title, params, options)
 
+    poll: (p, params = {}, options = {}) ->
+      @buildModelRoute('p', p.key, options.action or p.title, params, options)
+
     searchResult: (r, params = {}, options = {}) ->
       @discussion r, params, options
 
     user: (u, params = {}, options = {}) ->
-      @buildModelRoute('u', u.username, null, params, options)
+      @buildModelRoute('u', u[options.key || 'username'], null, params, options)
 
     proposal: (p, params = {}) ->
       @route model: p.discussion(), action: "proposal/#{p.key}", params: params
@@ -36,6 +39,9 @@ angular.module('loomioApp').factory 'LmoUrlService', (AppConfig) ->
     membershipRequest: (mr, params = {}, options = {}) ->
       @route model: mr.group(), action: 'membership_requests', params: params
 
+    visitor: ->
+      # NOOP for now
+
     oauthApplication: (a, params = {}, options = {}) ->
       @buildModelRoute('apps/registered', a.id, a.name, params, options)
 
@@ -44,7 +50,7 @@ angular.module('loomioApp').factory 'LmoUrlService', (AppConfig) ->
 
     buildModelRoute: (path, key, name, params, options) ->
       result = if options.absolute then AppConfig.baseUrl else "/"
-      result += "#{path}/#{key}"
+      result += "#{options.namespace || path}/#{key}"
       result += "/" + @stub(name)             unless !name? or options.noStub?
       result += "." + options.ext             if options.ext?
       result += "?" + @queryStringFor(params) if _.keys(params).length

@@ -10,10 +10,13 @@ given =  (args) ->
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 50000
 
 module.exports = new class PageHelper
-  loadPath: (path) ->
-    browser.get('development/'+path)
-    browser.driver.manage().window().setSize(1280, 1024)
-    browser.executeScript("document.querySelector('.lmo-navbar').style.position = 'absolute'")
+  loadPath: (path, timeout = 40000) ->
+    browser.get('dev/'+path, timeout)
+    browser.driver.manage().window().setSize(1680, 1024)
+
+  waitForReload: (time=3000)->
+    browser.driver.sleep(time)
+    browser.waitForAngular()
 
   expectElement: (selector)->
     expect(element(By.css(selector)).isPresent()).toBe(true)
@@ -31,11 +34,17 @@ module.exports = new class PageHelper
   clickFirst: (selector) ->
     element.all(By.css(selector)).first().click()
 
+  clickLast: (selector) ->
+    element.all(By.css(selector)).last().click()
+
   findFirst: (selector) ->
     element.all(By.css(selector)).first()
 
   fillIn: (selector, value) ->
     element(By.css(selector)).clear().sendKeys(value)
+
+  fillInAndEnter: (selector, value) ->
+    element(By.css(selector)).clear().sendKeys(value).sendKeys(browser.driver.keys('Enter'))
 
   expectInputValue: (selector, value) ->
     expect(element(By.css(selector)).getAttribute('value')).toContain(value)

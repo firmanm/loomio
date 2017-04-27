@@ -1,18 +1,18 @@
 module.exports = new class GroupsHelper
   load: (timeout) ->
-    browser.get('development/setup_group', timeout)
+    browser.get('dev/setup_group', timeout)
 
   loadPath: (path, timeout) ->
-    browser.get('development/'+path, timeout)
+    browser.get('dev/'+path, timeout)
 
   loadNew: ->
-    browser.get('development/setup_new_group')
+    browser.get('dev/setup_new_group')
 
   loadToJoin: (value) ->
-    browser.get("development/setup_group_to_join?membership_granted_upon=#{value}")
+    browser.get("dev/setup_group_to_join?membership_granted_upon=#{value}")
 
   loadWithMultipleCoordinators: ->
-    browser.get('development/setup_group_with_multiple_coordinators')
+    browser.get('dev/setup_group_with_multiple_coordinators')
 
   membersList: ->
     element(By.css('.members-card')).getText()
@@ -62,12 +62,6 @@ module.exports = new class GroupsHelper
   clearGroupNameInput: ->
     @groupNameInput().clear()
 
-  editGroupDescription: (description) ->
-    element(By.css('.group-form__description textarea')).sendKeys(description)
-
-  groupPageDescriptionText: ->
-    element(By.css('.group-page__description-text'))
-
   submitGroupForm: ->
     element(By.css('.group-form__submit-button')).click()
 
@@ -93,7 +87,7 @@ module.exports = new class GroupsHelper
     element(By.css('.members-card'))
 
   groupDescriptionPanel: ->
-    element(By.css('.group-page__description'))
+    element(By.css('.description-card'))
 
   groupThreadsList: ->
     element(By.css('.discussions-card'))
@@ -137,26 +131,8 @@ module.exports = new class GroupsHelper
   clickAddSubgroupLink: ->
     element(By.css('.group-page-actions__add-subgroup-link')).click()
 
-  groupVolumeCard: ->
-    element(By.css('.group-volume-card')).getText()
-
-  clickChangeInGroupVolumeCard: ->
-    element(By.css('.group-volume-card__change-volume-link')).click()
-
   clickFirstThread: ->
     element(By.css('.thread-preview__link')).click()
-
-  changeGroupVolumeToLoud: ->
-    element(By.id('volume-loud')).click()
-
-  submitChangeVolumeForm: ->
-    element(By.css('.change-volume-form__submit')).click()
-
-  welcomeModal: ->
-    element(By.css('.group-welcome-modal'))
-
-  dismissWelcomeModal: ->
-    element(By.css('.lmo-btn--primary')).click()
 
   visitMembersPage: ->
     element(By.css('.members-card__manage-members')).click()

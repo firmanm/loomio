@@ -12,11 +12,11 @@ include = (file, key) ->
 
 module.exports =
   core:
-    coffee:       _.flatten(['core/**/*.coffee', include(plugins, 'coffee')])
+    coffee:       _.flatten(['boot/**/*.coffee', 'core/**/*.coffee', include(plugins, 'coffee')])
     haml:         _.flatten(['core/components/**/*.haml', include(plugins, 'haml')])
     scss:         _.flatten([include(vendor, 'css'), 'core/css/main.scss', 'core/components/**/*.scss', include(plugins, 'scss')])
-    print:        _.flatten([include(vendor, 'css'), 'core/css/main.scss', 'core/components/**/*.scss', include(plugins, 'scss'), 'core/css/print/**/*.scss'])
     scss_include: _.flatten([include(vendor, 'css_includes'), 'core/css'])
+    scss_watch:   _.flatten([include(vendor, 'css'), 'core/css/*.scss', 'core/components/**/*.scss', include(plugins, 'scss')])
   dist:
     fonts:        '../public/client/fonts'
     assets:       '../public/client/development'
@@ -25,10 +25,12 @@ module.exports =
   html:
     core:         'core/components/**/*.haml'
   js:
-    core:         'core/**/*.coffee',
-    execjs:       _.flatten([include(vendor, 'execjs'), 'core/initializers/**/*.coffee'])
+    execcoffee:   'core/initializers/**/*.coffee'
+    execjs:       _.flatten(include(vendor, 'execjs'), include(vendor, 'lodash'))
     vendor:       include(vendor, 'js')
   protractor:
     config:       'test/protractor.coffee'
     screenshots:  'test/protractor/screenshots'
-    specs:        'test/protractor/*_spec.coffee'
+    specs:
+      core:        'test/protractor/*_spec.coffee'
+      plugins:     ['../plugins/**/*_spec.coffee', 'test/protractor/testing_spec.coffee']

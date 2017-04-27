@@ -6,11 +6,8 @@ describe API::ProfileController do
   let(:another_user) { create :user }
   let(:user_params) { { name: "new name", email: "new@email.com" } }
 
-  before do
-    sign_in user
-  end
-
   describe 'show' do
+    before { sign_in user }
     it 'returns the user json' do
       get :show, id: another_user.key, format: :json
       json = JSON.parse(response.body)
@@ -22,8 +19,6 @@ describe API::ProfileController do
         username
         avatar_initials
         avatar_kind
-        avatar_url
-        profile_url
         time_zone
         search_fragment
         label])
@@ -45,7 +40,23 @@ describe API::ProfileController do
     end
   end
 
+  describe 'me' do
+    it 'returns the current user data' do
+      sign_in user
+      get :me, format: :json
+      expect(response).to be_success
+      json = JSON.parse(response.body)
+      expect(json.dig('users', 0, 'id')).to eq user.id
+    end
+
+    it 'returns unauthorized for visitors' do
+      get :me, format: :json
+      expect(response.status).to eq 403
+    end
+  end
+
   describe 'update_profile' do
+    before { sign_in user }
     context 'success' do
       it 'updates a users profile picture type' do
         user.update avatar_kind: 'gravatar'
@@ -66,6 +77,7 @@ describe API::ProfileController do
   end
 
   describe 'set_volume' do
+    before { sign_in user }
 
     context 'success' do
       it "sets a default volume for all of a user's new memberships" do
@@ -95,6 +107,7 @@ describe API::ProfileController do
   end
 
   describe 'upload_avatar' do
+    before { sign_in user }
     context 'success' do
       it 'updates a users profile picture when uploaded' do
         user.update avatar_kind: 'gravatar'
@@ -118,6 +131,7 @@ describe API::ProfileController do
   end
 
   describe 'change_password' do
+    before { sign_in user }
     context 'success' do
       it "changes a users password" do
         old_password = user.encrypted_password
@@ -148,6 +162,7 @@ describe API::ProfileController do
   end
 
   describe 'deactivate' do
+    before { sign_in user }
     context 'success' do
       it "deactivates the users account" do
         post :deactivate, user: {deactivation_response: '' }, format: :json
@@ -169,6 +184,7 @@ describe API::ProfileController do
   end
 
   describe 'save_experience' do
+    before { sign_in user }
 
     it 'successfully saves an experience' do
       post :save_experience, experience: :happiness
@@ -183,7 +199,8 @@ describe API::ProfileController do
     end
 
     it 'responds with bad request when no experience is given' do
-      expect { post :save_experience }.to raise_error { ActionController::ParameterMissing }
+      post :save_experience
+      expect(response.status).to eq 400
     end
   end
 

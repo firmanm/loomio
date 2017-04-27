@@ -1,237 +1,245 @@
-an:
-  frontpage: 51
-  main_1_0: 18
-  server: 48
-ar:
-  frontpage: 98
-  main_1_0: 92
-  server: 85
-be-BY:
-  frontpage: 100
-  main_1_0: 24
-  server: 89
-bg-BG:
-  frontpage: 9
-  main_1_0: 13
-  server: 12
-ca:
-  frontpage: 48
-  main_1_0: 17
-  server: 33
-cmn:
-  frontpage: 1
-  main_1_0: 8
-  server: 6
-cs:
-  frontpage: 75
-  main_1_0: 56
-  server: 60
-da:
-  frontpage: 51
-  main_1_0: 27
-  server: 48
-de:
-  frontpage: 98
-  main_1_0: 83
-  server: 82
-el:
-  frontpage: 98
-  main_1_0: 42
-  server: 71
-en-BE:
-  frontpage: 0
+af:
   main_1_0: 0
+  marketing: 0
+  server: 0
+an:
+  main_1_0: 11
+  marketing: 0
+  server: 21
+ar:
+  main_1_0: 50
+  marketing: 0
+  server: 36
+be-BY:
+  main_1_0: 14
+  marketing: 0
+  server: 38
+bg-BG:
+  main_1_0: 8
+  marketing: 0
+  server: 5
+ca:
+  main_1_0: 56
+  marketing: 62
+  server: 38
+cmn:
+  main_1_0: 5
+  marketing: 0
+  server: 2
+cs:
+  main_1_0: 37
+  marketing: 2
+  server: 27
+da:
+  main_1_0: 16
+  marketing: 0
+  server: 21
+de:
+  main_1_0: 59
+  marketing: 0
+  server: 38
+el:
+  main_1_0: 23
+  marketing: 0
+  server: 31
+en-BE:
+  main_1_0: 0
+  marketing: 0
   server: 0
 en-NL:
-  frontpage: 0
   main_1_0: 0
+  marketing: 0
   server: 0
 en-US: {}
 eo:
-  frontpage: 51
-  main_1_0: 22
-  server: 48
+  main_1_0: 13
+  marketing: 0
+  server: 21
 es:
-  frontpage: 98
-  main_1_0: 100
-  server: 99
+  main_1_0: 78
+  marketing: 100
+  server: 70
 es-AR:
-  frontpage: 0
   main_1_0: 0
+  marketing: 0
   server: 0
 fa-IR:
-  frontpage: 59
   main_1_0: 1
-  server: 3
+  marketing: 0
+  server: 2
 fi:
-  frontpage: 98
-  main_1_0: 12
-  server: 7
+  main_1_0: 7
+  marketing: 0
+  server: 3
 fr:
-  frontpage: 98
-  main_1_0: 84
-  server: 82
+  main_1_0: 73
+  marketing: 100
+  server: 70
 fr-BE:
-  frontpage: 0
   main_1_0: 0
+  marketing: 0
   server: 0
 ga-IE:
-  frontpage: 68
-  main_1_0: 55
-  server: 42
+  main_1_0: 48
+  marketing: 2
+  server: 21
 gl:
-  frontpage: 28
-  main_1_0: 13
-  server: 19
+  main_1_0: 8
+  marketing: 0
+  server: 9
 he:
-  frontpage: 54
-  main_1_0: 11
-  server: 22
+  main_1_0: 7
+  marketing: 0
+  server: 10
 he-IL: {}
 hi:
-  frontpage: 0
   main_1_0: 0
+  marketing: 0
   server: 0
 hi-IN: {}
 hr:
-  frontpage: 98
-  main_1_0: 6
-  server: 6
+  main_1_0: 3
+  marketing: 0
+  server: 3
 hu:
-  frontpage: 72
-  main_1_0: 28
-  server: 59
+  main_1_0: 26
+  marketing: 0
+  server: 26
 id:
-  frontpage: 28
-  main_1_0: 14
-  server: 28
+  main_1_0: 9
+  marketing: 0
+  server: 12
 io:
-  frontpage: 7
   main_1_0: 0
-  server: 1
+  marketing: 0
+  server: 0
 it:
-  frontpage: 100
-  main_1_0: 71
-  server: 80
+  main_1_0: 39
+  marketing: 0
+  server: 34
 it-CH:
-  frontpage: 0
   main_1_0: 0
+  marketing: 0
   server: 0
 it-IT: {}
 ja:
-  frontpage: 71
-  main_1_0: 18
-  server: 36
+  main_1_0: 11
+  marketing: 0
+  server: 16
 km:
-  frontpage: 7
-  main_1_0: 13
-  server: 26
+  main_1_0: 8
+  marketing: 0
+  server: 11
 ko:
-  frontpage: 98
-  main_1_0: 82
-  server: 45
+  main_1_0: 63
+  marketing: 45
+  server: 20
 ko-KR: {}
 lt:
-  frontpage: 22
-  main_1_0: 31
-  server: 7
+  main_1_0: 18
+  marketing: 6
+  server: 4
 lv:
-  frontpage: 0
   main_1_0: 0
+  marketing: 0
   server: 0
 mi:
-  frontpage: 1
-  main_1_0: 3
+  main_1_0: 5
+  marketing: 1
   server: 1
 mk:
-  frontpage: 51
-  main_1_0: 12
-  server: 30
+  main_1_0: 7
+  marketing: 0
+  server: 14
 ml:
-  frontpage: 9
-  main_1_0: 13
-  server: 27
+  main_1_0: 8
+  marketing: 0
+  server: 11
 ml-IN:
-  frontpage: 0
   main_1_0: 0
+  marketing: 0
+  server: 0
+nb-NO:
+  main_1_0: 0
+  marketing: 0
   server: 0
 nl: {}
 nl-NL:
-  frontpage: 98
-  main_1_0: 28
-  server: 58
+  main_1_0: 90
+  marketing: 100
+  server: 84
 pl:
-  frontpage: 98
-  main_1_0: 51
-  server: 23
+  main_1_0: 28
+  marketing: 0
+  server: 11
 pt-BR:
-  frontpage: 98
-  main_1_0: 92
-  server: 94
+  main_1_0: 74
+  marketing: 100
+  server: 70
 pt-PT:
-  frontpage: 16
   main_1_0: 0
-  server: 3
+  marketing: 0
+  server: 1
 ro:
-  frontpage: 98
-  main_1_0: 39
-  server: 65
+  main_1_0: 24
+  marketing: 0
+  server: 30
 ru:
-  frontpage: 59
-  main_1_0: 23
-  server: 17
+  main_1_0: 28
+  marketing: 2
+  server: 9
 ru-RU: {}
 sk:
-  frontpage: 51
-  main_1_0: 18
-  server: 48
+  main_1_0: 11
+  marketing: 0
+  server: 21
 sl:
-  frontpage: 57
-  main_1_0: 23
-  server: 53
+  main_1_0: 14
+  marketing: 0
+  server: 24
 sr:
-  frontpage: 98
-  main_1_0: 83
-  server: 82
+  main_1_0: 60
+  marketing: 81
+  server: 61
 sr-RS:
-  frontpage: 68
-  main_1_0: 22
-  server: 79
+  main_1_0: 20
+  marketing: 0
+  server: 34
 sv:
-  frontpage: 51
-  main_1_0: 18
-  server: 48
+  main_1_0: 17
+  marketing: 68
+  server: 23
 te:
-  frontpage: 15
-  main_1_0: 8
-  server: 12
+  main_1_0: 5
+  marketing: 0
+  server: 6
 te-IN: {}
 th: {}
 th-TH:
-  frontpage: 0
   main_1_0: 0
+  marketing: 0
   server: 0
 tr:
-  frontpage: 98
-  main_1_0: 88
-  server: 85
+  main_1_0: 48
+  marketing: 0
+  server: 36
 uk:
-  frontpage: 71
-  main_1_0: 73
-  server: 52
+  main_1_0: 95
+  marketing: 5
+  server: 25
 ur:
-  frontpage: 0
   main_1_0: 0
+  marketing: 0
   server: 0
 ur-PK:
-  frontpage: 0
   main_1_0: 0
+  marketing: 0
   server: 0
 vi:
-  frontpage: 7
-  main_1_0: 12
-  server: 17
+  main_1_0: 7
+  marketing: 0
+  server: 7
 zh-TW:
-  frontpage: 98
-  main_1_0: 92
-  server: 86
+  main_1_0: 100
+  marketing: 100
+  server: 100

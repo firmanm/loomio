@@ -17,30 +17,31 @@ angular.module('loomioApp').directive 'notifications', ->
       'motion_closing_soon',
       'motion_outcome_created',
       'invitation_accepted',
-      'new_coordinator'
+      'new_coordinator',
+      'poll_created',
+      'poll_closing_soon',
+      'poll_edited',
+      'poll_expired',
+      'outcome_created'
     ]
-    eventFilter = (notification) -> _.contains kinds, notification.event().kind
 
     notificationsView = Records.notifications.collection.addDynamicView("notifications")
-                               .applyWhere(eventFilter)
-    $scope.notifications = -> notificationsView.data()
+                               .applyFind(kind: { $in: kinds })
 
     unreadView =        Records.notifications.collection.addDynamicView("unread")
-                               .applyWhere(eventFilter)
+                               .applyFind(kind: { $in: kinds })
                                .applyFind(viewed: { $ne: true })
-    $scope.unreadNotifications = -> unreadView.data()
+
+    $scope.notifications = -> notificationsView.data()
 
     $scope.broadcastThreadEvent = (notification) ->
-      $rootScope.$broadcast 'threadPageEventsLoaded', notification.event()
-
-    $scope.loading = ->
-      !AppConfig.notificationsLoaded
+      # $rootScope.$broadcast 'threadPageEventsLoaded', notification.event()
 
     $scope.toggled = (open) ->
       Records.notifications.viewed() if open
 
     $scope.unreadCount = =>
-      $scope.unreadNotifications().length
+      unreadView.data().length
 
     $scope.hasUnread = =>
       $scope.unreadCount() > 0

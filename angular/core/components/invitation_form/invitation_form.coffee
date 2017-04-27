@@ -6,9 +6,9 @@ angular.module('loomioApp').factory 'InvitationForm', ->
       _.filter Session.user().groups(), (group) ->
         AbilityService.canAddMembers(group)
 
-    $scope.form = Records.invitationForms.build(groupId: group.id or (_.first($scope.availableGroups()) or {}).id)
+    $scope.form = Records.invitationForms.build(groupId: group.id)
     $scope.fetchShareableInvitation = ->
-      Records.invitations.fetchShareableInvitationByGroupId($scope.form.group().id)
+      Records.invitations.fetchShareableInvitationByGroupId($scope.form.group().id) if $scope.form.group()
     $scope.fetchShareableInvitation()
     $scope.showCustomMessageField = false
     $scope.isDisabled = false
@@ -56,7 +56,7 @@ angular.module('loomioApp').factory 'InvitationForm', ->
         submitForm()
 
     submitForm = FormService.submit $scope, $scope.form,
-      draftFields: ['emails', 'message']
+      drafts: true
       submitFn: Records.invitations.sendByEmail
       successCallback: (response) =>
         invitationCount = response.invitations.length

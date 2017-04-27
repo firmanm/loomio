@@ -5,12 +5,18 @@ angular.module('loomioApp').factory 'CommentModel', (DraftableModel, AppConfig) 
     @indices: ['discussionId', 'authorId']
     @serializableAttributes: AppConfig.permittedParams.comment
     @draftParent: 'discussion'
+    @draftPayloadAttributes: ['body', 'attachment_ids']
+
+    afterConstruction: ->
+      @newAttachmentIds = _.clone(@attachmentIds) or []
 
     defaultValues: ->
       usesMarkdown: true
-      newAttachmentIds: []
       discussionId: null
       body: ''
+      likerIds:           []
+      attachmentIds:      []
+      mentionedUsernames: []
 
     relationships: ->
       @belongsTo 'author', from: 'users'
@@ -20,7 +26,7 @@ angular.module('loomioApp').factory 'CommentModel', (DraftableModel, AppConfig) 
 
     serialize: ->
       data = @baseSerialize()
-      data['comment']['new_attachment_ids'] = @newAttachmentIds
+      data.comment.attachment_ids = @newAttachmentIds
       data
 
     group: ->
@@ -32,6 +38,9 @@ angular.module('loomioApp').factory 'CommentModel', (DraftableModel, AppConfig) 
     isReply: ->
       @parentId?
 
+    hasContext: ->
+      !!@body
+
     parent: ->
       @recordStore.comments.find(@parentId)
 
@@ -42,7 +51,7 @@ angular.module('loomioApp').factory 'CommentModel', (DraftableModel, AppConfig) 
       @recordStore.attachments.find(@newAttachmentIds)
 
     attachments: ->
-      @recordStore.attachments.find(commentId: @id)
+      @recordStore.attachments.find(attachableId: @id, attachableType: 'Comment')
 
     authorName: ->
       @author().name

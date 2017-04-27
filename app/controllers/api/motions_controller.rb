@@ -1,10 +1,7 @@
 class API::MotionsController < API::RestfulController
+  load_and_authorize_resource only: :show
   include UsesDiscussionReaders
-
-  def show
-    load_and_authorize(:motion)
-    respond_with_resource
-  end
+  include UsesFullSerializer
 
   def close
     @event = service.close_by_user(load_and_authorize(:motion, :close), current_user)
@@ -43,12 +40,11 @@ class API::MotionsController < API::RestfulController
   private
 
   def closed_motion_scope
-    return {} unless current_user.is_logged_in?
-    { vote_cache: VoteCache.new(current_user, current_user.votes.where(motion: collection)) }
+    { vote_cache: Caches::Vote.new(user: current_user, parents: resources_to_serialize.map(&:discussion)) }
   end
 
   def accessible_records
-    Queries::VisibleMotions.new(user: current_user, groups: current_user.groups)
+    Queries::VisibleMotions.new(user: current_user)
   end
 
   def serializer_root

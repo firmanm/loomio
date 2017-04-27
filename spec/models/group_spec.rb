@@ -6,29 +6,6 @@ describe Group do
   let(:group) { create(:group) }
   let(:discussion) { create :discussion, group: group }
 
-  context "is_referral" do
-    it "is false for first group" do
-      expect(group.is_referral).to be false
-    end
-
-    it "is true for second group" do
-      group2 = create(:group, creator: group.creator)
-      expect(group2.is_referral).to be true
-    end
-  end
-
-  context "group creator" do
-    it "stores the admin as a creator" do
-      expect(group.creator).to eq group.admins.first
-    end
-
-    it "delegates language to the group creator" do
-      @user = create :user, selected_locale: :fr
-      group = create :group, creator: @user
-      expect(group.locale).to eq group.creator.locale
-    end
-  end
-
   context 'default cover photo' do
 
     it 'returns an uploaded cover url if one exists' do
@@ -53,7 +30,7 @@ describe Group do
   context "counter caches" do
     describe 'invitations_count' do
       before do
-        @group = create(:group)
+        @group = create(:group, creator: create(:user))
         @user  = create(:user)
       end
 
@@ -174,11 +151,18 @@ describe Group do
     it "can promote existing member to admin" do
       @group.add_member!(@user)
       @group.add_admin!(@user)
+      expect(@group.admins).to include @user
     end
 
     it "can add a member" do
       @group.add_member!(@user)
-      @group.users.should include(@user)
+      expect(@group.users).to include @user
+    end
+
+    it 'sets the first admin to be the creator' do
+      @group = Group.new(name: "Test group")
+      @group.add_admin!(@user)
+      expect(@group.creator).to eq @user
     end
   end
 
@@ -240,7 +224,7 @@ describe Group do
       end
 
       it 'archives the memberships of the group' do
-        group.memberships.all?{|m| m.archived_at.should be_present}
+        group.memberships.reload.all?{|m| m.reload.archived_at.should be_present}
       end
     end
 
@@ -275,6 +259,20 @@ describe Group do
       subgroup; group.reload
       expect(group.id_and_subgroup_ids).to include group.id
       expect(group.id_and_subgroup_ids).to include subgroup.id
+    end
+  end
+
+  describe 'community' do
+    it 'creates a new community if one does not exist' do
+      expect(group.community_id).to be_nil
+      expect(group.community).to be_a Communities::LoomioGroup
+      expect(group.community.group).to eq group
+    end
+  end
+
+  describe 'uses_polls' do
+    it 'defaults to true' do
+      expect(Group.new.features['use_polls']).to eq true
     end
   end
 end

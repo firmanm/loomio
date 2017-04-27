@@ -1,7 +1,9 @@
 .thread-preview {
+  @include md-body-1;
   min-height: $boxMediumSize + ($thinPaddingSize * 2);
   border-bottom: 1px solid $border-color;
   position: relative;
+  &.loading-content { padding: 10px; }
   &:hover {
     .thread-preview__actions { display: block; }
     background-color: $list-hover-color;
@@ -25,12 +27,13 @@
   margin-top: $thinPaddingSize;
 }
 
-.thread-preview__mark-as-read{
+.thread-preview__dismiss{
   @include lmoBtnDefault;
   @include lmoBtnSm;
 }
 
-.thread-preview__mute{
+.thread-preview__mute,
+.thread-preview__unmute {
   @include lmoBtnDefault;
   @include lmoBtnSm;
   margin-left: 5px;
@@ -46,11 +49,16 @@
   }
 }
 
+.thread-preview__screen-only {
+  overflow: hidden;
+}
+
 .thread-preview__link {
   display: block;
   padding: $thinPaddingSize $cardPaddingSize;
   color: $primary-text-color;
   text-decoration: none;
+  @include displayFlex;
 }
 
 .thread-preview__link:hover {
@@ -60,7 +68,9 @@
 
 .thread-preview__icon {
   @include boxMedium;
-  float: left;
+  .user-avatar {
+    pointer-events: none;
+  }
 }
 
 .thread-preview__pie-canvas {
@@ -69,27 +79,28 @@
 
 .thread-preview__text-container{
   @include displayFlex;
-  line-height: 22px;
+  // line-height: 22px;
   margin-right: 17px;
 }
 
 .thread-preview__title{
+  @include md-subhead;
   padding-left: $thinPaddingSize;
   vertical-align: top;
   @include truncateText;
 }
 
 .thread-preview__proposal-name{
-  font-size: 93%;
+  // font-size: 93%;
   padding-left: $thinPaddingSize;
   padding-right: 5px;
   @include truncateText;
 }
 
 .thread-preview__group-name{
+  @include md-caption;
   @include truncateText;
   padding-left: $thinPaddingSize;
-  font-size: 13px;
   color: $grey-on-white;
 }
 
@@ -104,11 +115,11 @@
 }
 
 .thread-preview--unread {
-  font-weight: bold;
+  @include md-body-2;
 }
 
 .thread-preview__proposal-closing-at {
-  @include fontTiny;
+  @include md-caption;
   color: $highlight-red;
 }
 

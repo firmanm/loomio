@@ -1,6 +1,7 @@
 class Group < ActiveRecord::Base
   include ReadableUnguessableUrls
   include HasTimeframe
+  include HasPolls
   include MessageChannel
 
   class MaximumMembershipsExceeded < Exception
@@ -13,7 +14,6 @@ class Group < ActiveRecord::Base
   validates_inclusion_of :discussion_privacy_options, in: DISCUSSION_PRIVACY_OPTIONS
   validates_inclusion_of :membership_granted_upon, in: MEMBERSHIP_GRANTED_UPON_OPTIONS
   validates :name, length: { maximum: 250 }
-  validates :subscription, absence: true, if: :is_subgroup?
 
   validate :limit_inheritance
   validate :validate_parent_members_can_see_discussions
@@ -33,14 +33,10 @@ class Group < ActiveRecord::Base
 
   scope :parents_only, -> { where(parent_id: nil) }
 
-  scope :is_subscription, -> { where(is_commercial: true) }
-  scope :is_donation, -> { where('is_commercial = false or is_commercial IS NULL') }
-
   scope :sort_by_popularity, -> { order('memberships_count DESC') }
 
   scope :visible_to_public, -> { published.where(is_visible_to_public: true) }
   scope :hidden_from_public, -> { published.where(is_visible_to_public: false) }
-  scope :created_by, -> (user) { where(creator_id: user.id) }
 
   scope :explore_search, ->(query) { where("name ilike :q or description ilike :q", q: "%#{query}%") }
 
@@ -57,15 +53,20 @@ class Group < ActiveRecord::Base
   }
 
   scope :active_discussions_since, ->(time) {
-    includes(:discussions).where('discussions.last_comment_at > ?', time).references(:discussions)
+    includes(:discussions).where('discussions.last_activity_at > ?', time).references(:discussions)
   }
 
   scope :created_earlier_than, lambda {|time| where('groups.created_at < ?', time) }
 
-  scope :engaged, -> { more_than_n_members(1).
-                       more_than_n_discussions(2).
-                       active_discussions_since(2.month.ago).
-                       parents_only }
+  scope :engaged, ->(since = 2.months.ago) {
+    more_than_n_members(1).
+    more_than_n_discussions(2).
+    active_discussions_since(since)
+  }
+
+  scope :with_analytics, ->(since = 1.month.ago) {
+    where(analytics_enabled: true).engaged(since).joins(:admin_memberships)
+  }
 
   scope :engaged_but_stopped, -> { more_than_n_members(1).
                                    more_than_n_discussions(2).
@@ -120,7 +121,6 @@ class Group < ActiveRecord::Base
 
   after_initialize :set_defaults
 
-  after_create :set_is_referral
   after_create :guess_cohort
 
   alias :users :members
@@ -129,6 +129,7 @@ class Group < ActiveRecord::Base
   has_many :admins, through: :admin_memberships, source: :user
   has_many :discussions, dependent: :destroy
   has_many :motions, through: :discussions
+  has_many :polls, through: :discussions
   has_many :votes, through: :motions
 
   belongs_to :parent, class_name: 'Group'
@@ -136,6 +137,7 @@ class Group < ActiveRecord::Base
   belongs_to :category
   belongs_to :theme
   belongs_to :cohort
+  belongs_to :community, class_name: 'Communities::LoomioGroup'
   belongs_to :default_group_cover
 
   has_many :subgroups,
@@ -150,13 +152,10 @@ class Group < ActiveRecord::Base
            class_name: 'Group',
            foreign_key: :parent_id
 
-  belongs_to :subscription, dependent: :destroy
-
   delegate :include?, to: :users, prefix: true
   delegate :users, to: :parent, prefix: true
   delegate :members, to: :parent, prefix: true
   delegate :name, to: :parent, prefix: true
-  delegate :locale, to: :creator
 
   paginates_per 20
 
@@ -164,7 +163,7 @@ class Group < ActiveRecord::Base
                        styles: {largedesktop: "1400x320#", desktop: "970x200#", card: "460x94#"},
                        default_url: :default_cover_photo
   has_attached_file    :logo,
-                       styles: { card: "67x67", medium: "100x100" },
+                       styles: { card: "67x67#", medium: "100x100#" },
                        default_url: 'default-logo-:style.png'
 
   validates_attachment :cover_photo,
@@ -177,13 +176,26 @@ class Group < ActiveRecord::Base
     content_type: { content_type: /\Aimage/ },
     file_name: { matches: [/png\Z/i, /jpe?g\Z/i, /gif\Z/i] }
 
-  define_counter_cache(:motions_count)            { |group| group.discussions.published.sum(:motions_count) }
-  define_counter_cache(:closed_motions_count)     { |group| group.motions.closed.count }
-  define_counter_cache(:discussions_count)        { |group| group.discussions.published.count }
-  define_counter_cache(:public_discussions_count) { |group| group.discussions.visible_to_public.count }
-  define_counter_cache(:memberships_count)        { |group| group.memberships.count }
-  define_counter_cache(:admin_memberships_count)  { |group| group.admin_memberships.count }
-  define_counter_cache(:invitations_count)        { |group| group.invitations.count }
+  define_counter_cache(:motions_count)             { |group| group.discussions.published.sum(:motions_count) }
+  define_counter_cache(:closed_motions_count)      { |group| group.motions.closed.count }
+  define_counter_cache(:closed_polls_count)        { |group| group.polls.closed.count }
+  define_counter_cache(:discussions_count)         { |group| group.discussions.published.count }
+  define_counter_cache(:public_discussions_count)  { |group| group.discussions.visible_to_public.count }
+  define_counter_cache(:memberships_count)         { |group| group.memberships.count }
+  define_counter_cache(:admin_memberships_count)   { |group| group.admin_memberships.count }
+  define_counter_cache(:invitations_count)         { |group| group.invitations.count }
+  define_counter_cache(:proposal_outcomes_count)   { |group| group.motions.with_outcomes.count }
+  define_counter_cache(:pending_invitations_count) { |group| group.invitations.pending.count }
+  define_counter_cache(:announcement_recipients_count) { |group| group.memberships.volume_at_least(:normal).count }
+
+  def group
+    self
+  end
+
+  def community
+    update(community: Communities::LoomioGroup.create(group: self)) unless self[:community_id]
+    super
+  end
 
   # default_cover_photo is the name of the proc used to determine the url for the default cover photo
   # default_group_cover is the associated DefaultGroupCover object from which we get our default cover photo
@@ -197,36 +209,6 @@ class Group < ActiveRecord::Base
     end
   end
 
-  before_save :set_creator_if_blank
-
-  def set_creator_if_blank
-    if self[:creator_id].blank? and admins.any?
-      self.creator = admins.first
-    end
-  end
-
-  alias_method :real_creator, :creator
-
-  def creator
-    self.real_creator || admins.first || members.first
-  end
-
-  def creator_id
-    self[:creator_id] || creator.try(:id)
-  end
-
-  def coordinators
-    admins
-  end
-
-  def contact_person
-    admins.order('id asc').first
-  end
-
-  def requestor_name_and_email
-    "#{requestor_name} <#{requestor_email}>"
-  end
-
   def requestor_name
     group_request.try(:admin_name)
   end
@@ -238,9 +220,7 @@ class Group < ActiveRecord::Base
   def archive!
     self.update_attribute(:archived_at, DateTime.now)
     memberships.update_all(archived_at: DateTime.now)
-    subgroups.each do |group|
-      group.archive!
-    end
+    subgroups.map(&:archive!)
   end
 
   def unarchive!
@@ -362,36 +342,22 @@ class Group < ActiveRecord::Base
   end
 
   def add_member!(user, inviter=nil)
-    find_or_create_membership(user, inviter)
-  end
-
-  def add_members!(users, inviter=nil)
-    users.map do |user|
-      add_member!(user, inviter)
+    begin
+      tap(&:save!).memberships.find_or_create_by(user: user) { |m| m.inviter = inviter }
+    rescue ActiveRecord::RecordNotUnique
+      retry
     end
   end
 
+  def add_members!(users, inviter=nil)
+    users.map { |user| add_member!(user, inviter) }
+  end
+
   def add_admin!(user, inviter = nil)
-    membership = find_or_create_membership(user, inviter)
-    membership.make_admin! && save
-    self.creator = user if creator.blank?
-    membership
-  end
-
-  def add_default_content!
-    update default_group_cover: DefaultGroupCover.sample, subscription: Subscription.new_trial
-    ExampleContent.add_to_group(self)
-  end
-
-  def find_or_create_membership(user, inviter)
-    begin
-      Membership.find_or_create_by(user_id: user.id, group_id: id) do |m|
-        m.group = self
-        m.user = user
-        m.inviter = inviter
-      end
-    rescue ActiveRecord::RecordNotUnique
-      retry
+    add_member!(user, inviter).tap do |m|
+      m.make_admin!
+      update(creator: user) if creator.blank?
+      reload
     end
   end
 
@@ -499,16 +465,11 @@ class Group < ActiveRecord::Base
     end
   end
 
-  def set_is_referral
-    if creator && creator.groups.size > 0
-      update_attribute(:is_referral, true)
-    end
-  end
-
   def set_defaults
     self.is_visible_to_public ||= false
     self.discussion_privacy_options ||= 'private_only'
     self.membership_granted_upon ||= 'approval'
+    self.features['use_polls'] = true
   end
 
   def guess_cohort

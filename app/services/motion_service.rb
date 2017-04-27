@@ -21,6 +21,7 @@ class MotionService
     return false unless motion.valid?
 
     motion.save!
+    EventBus.broadcast('motion_update', motion, actor)
     Events::MotionEdited.publish!(motion, actor)
   end
 
@@ -59,7 +60,7 @@ class MotionService
 
     motion.save!
     EventBus.broadcast('motion_create_outcome', motion, params, actor)
-    Events::MotionOutcomeCreated.publish!(motion, actor)
+    Events::MotionOutcomeCreated.publish!(motion)
   end
 
   def self.update_outcome(motion:, params:, actor:)

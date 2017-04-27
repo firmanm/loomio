@@ -6,7 +6,7 @@ angular.module('loomioApp').factory 'UserModel', (BaseModel, AppConfig) ->
     @serializableAttributes: AppConfig.permittedParams.user
 
     relationships: ->
-      # note we should move these to a User extends UserModel so that all our authors dont get views created
+      # note we should move these to a User extends UserModel so that all our authors don't get views created
       @hasMany 'memberships'
       @hasMany 'notifications'
       @hasMany 'contacts'
@@ -14,9 +14,6 @@ angular.module('loomioApp').factory 'UserModel', (BaseModel, AppConfig) ->
 
     membershipFor: (group) ->
       _.first @recordStore.memberships.find(groupId: group.id, userId: @id)
-
-    isMemberOf: (group) ->
-      @membershipFor(group)?
 
     groupIds: ->
       _.map(@memberships(), 'groupId')
@@ -28,6 +25,12 @@ angular.module('loomioApp').factory 'UserModel', (BaseModel, AppConfig) ->
     parentGroups: ->
       _.filter @groups(), (group) -> group.isParent()
 
+    hasAnyGroups: ->
+      @groups().length > 0
+
+    hasMultipleGroups: ->
+      @groups().length > 1
+
     allThreads:->
       _.flatten _.map @groups(), (group) ->
         group.discussions()
@@ -35,6 +38,10 @@ angular.module('loomioApp').factory 'UserModel', (BaseModel, AppConfig) ->
     orphanSubgroups: ->
       _.filter @groups(), (group) =>
         group.isSubgroup() and !@isMemberOf(group.parent())
+
+    orphanParents: ->
+      _.uniq _.map @orphanSubgroups(), (group) =>
+        group.parent()
 
     isAuthorOf: (object) ->
       @id == object.authorId
@@ -67,3 +74,9 @@ angular.module('loomioApp').factory 'UserModel', (BaseModel, AppConfig) ->
         @membershipFor(group).experiences[key]
       else
         @experiences[key]
+
+    hasProfilePhoto: ->
+      @avatarKind != 'initials'
+
+    belongsToPayingGroup: ->
+      _.any @groups(), (group) -> group.subscriptionKind == 'paid'

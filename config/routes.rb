@@ -1,6 +1,8 @@
 Loomio::Application.routes.draw do
 
-  use_doorkeeper
+  use_doorkeeper do
+    skip_controllers :applications, :authorized_applications
+  end
 
   constraints(GroupSubdomainConstraints) do
     get '/' => 'redirect#group_subdomain'
@@ -11,9 +13,17 @@ Loomio::Application.routes.draw do
 
   root to: 'root#index'
 
-  resources(:development, only: :index) do
-    get 'last_email', on: :collection, as: :last_email
-    get ':action', on: :collection
+  namespace :dev do
+    namespace :polls do
+      get '/' => :index
+      get ':action'
+    end
+
+    scope controller: 'main' do
+      get '/' => :index
+      get ':action'
+      get 'last_email'
+    end
   end
 
   namespace :admin do
@@ -44,7 +54,6 @@ Loomio::Application.routes.draw do
       get :count_explore_results, on: :collection
       patch :archive, on: :member
       put :archive, on: :member
-      post :use_gift_subscription, on: :member
       post 'upload_photo/:kind', on: :member, action: :upload_photo
     end
 
@@ -58,6 +67,7 @@ Loomio::Application.routes.draw do
         get :for_user
         get :my_memberships
         get :invitables
+        get :undecided
       end
       member do
         post :make_admin
@@ -83,6 +93,7 @@ Loomio::Application.routes.draw do
     end
 
     resources :profile, only: [:show] do
+      get  :me, on: :collection
       post :update_profile, on: :collection
       post :set_volume, on: :collection
       post :upload_avatar, on: :collection
@@ -103,6 +114,7 @@ Loomio::Application.routes.draw do
 
     resources :discussions, only: [:show, :index, :create, :update, :destroy] do
       patch :mark_as_read, on: :member
+      patch :dismiss, on: :member
       patch :set_volume, on: :member
       patch :star, on: :member
       patch :unstar, on: :member
@@ -125,11 +137,30 @@ Loomio::Application.routes.draw do
       get  :closed, on: :collection
     end
 
-    resources :votes,       only: [       :index, :create, :update] do
+    resources :polls,       only: [:show, :index, :create, :update] do
+      post :close, on: :member
+      get  :search, on: :collection
+      get  :search_results_count, on: :collection
+    end
+
+    resources :visitors,    only: [:index, :create, :update, :destroy] do
+      post :remind, on: :member
+    end
+
+    resource :outcomes,     only: [:create, :update]
+
+    resources :votes,       only: [:index, :create, :update] do
       get :my_votes, on: :collection
     end
 
+    resources :stances,     only: [:index, :create, :update] do
+      get :my_stances, on: :collection
+    end
+
+    resources :outcomes,    only: [:create, :update]
+
     resources :did_not_votes, only: :index
+    resources :poll_did_not_votes, only: :index
 
     resources :comments,    only: [:create, :update, :destroy] do
       post :like, on: :member
@@ -179,7 +210,11 @@ Loomio::Application.routes.draw do
                                     registrations: 'users/registrations',
                                     omniauth_callbacks: 'users/omniauth_callbacks' }
 
-  namespace(:subscriptions) { post :webhook }
+  namespace(:subscriptions) do
+    get :select_gift_plan
+    post :webhook
+  end
+
   resources :invitations, only: [:show]
   get '/users/invitation/accept' => redirect {|params, request|  "/invitations/#{request.query_string.gsub('invitation_token=','')}"}
 
@@ -204,15 +239,11 @@ Loomio::Application.routes.draw do
   get  'start_group' => 'start_group#new'
   post 'start_group' => 'start_group#create'
 
-  get 'g/:key/export'                      => 'groups#export',    as: :group_export
-  get 'g/:key(/:slug)'                     => 'groups#show',      as: :group
-  get 'd/:key(/:slug)'                     => 'discussions#show', as: :discussion
-  get 'm/:key(/:slug)'                     => 'motions#show',     as: :motion
-  get 'u/:username/'                       => 'users#show',       as: :user
-
   get 'dashboard'                          => 'application#boot_angular_ui', as: :dashboard
+  get 'dashboard/:filter'                  => 'application#boot_angular_ui'
   get 'inbox'                              => 'application#boot_angular_ui', as: :inbox
   get 'groups'                             => 'application#boot_angular_ui', as: :groups
+  get 'polls'                              => 'application#boot_angular_ui', as: :polls
   get 'explore'                            => 'application#boot_angular_ui', as: :explore
   get 'profile'                            => 'application#boot_angular_ui', as: :profile
   get 'email_preferences'                  => 'application#boot_angular_ui', as: :email_preferences
@@ -222,11 +253,28 @@ Loomio::Application.routes.draw do
   get 'apps/registered/:id/:slug'          => 'application#boot_angular_ui'
   get 'd/:key/proposal/:proposal'          => 'application#boot_angular_ui', as: :discussion_motion
   get 'd/:key/comment/:comment'            => 'application#boot_angular_ui', as: :discussion_comment
-  get 'd/:key/proposal/:proposal/:outcome' => 'application#boot_angular_ui', as: :discussion_motion_outcome
+  get 'd/:key/proposal/:proposal/outcome'  => 'application#boot_angular_ui', as: :discussion_motion_outcome
   get 'g/:key/membership_requests'         => 'application#boot_angular_ui', as: :group_membership_requests
   get 'g/:key/memberships'                 => 'application#boot_angular_ui', as: :group_memberships
   get 'g/:key/previous_proposals'          => 'application#boot_angular_ui', as: :group_previous_proposals
-  get 'g/:key/memberships/:username'       => 'application#boot_angular_ui'
+  get 'g/:key/previous_polls'              => 'application#boot_angular_ui', as: :group_previous_polls
+  get 'g/:key/memberships/:username'       => 'application#boot_angular_ui', as: :group_memberships_username
+  get 'p/new(/:type)'                      => 'application#boot_angular_ui', as: :new_poll
+
+  get 'g/:key/export'                      => 'groups#export',               as: :group_export
+  get 'g/:key(/:slug)'                     => 'groups#show',                 as: :group
+  get 'd/:key(/:slug)'                     => 'discussions#show',            as: :discussion
+  get 'd/:key/comment/:comment_id'         => 'discussions#show',            as: :comment
+  get 'm/:key(/:slug)'                     => 'motions#show',                as: :motion
+  get 'p/:key/share'                       => 'polls#share',                 as: :share_poll
+  get 'p/:key(/:slug)'                     => 'polls#show',                  as: :poll
+  get 'vote/:key(/:slug)'                  => 'polls#show'
+  get 'u/:username/'                       => 'users#show',                  as: :user
+
+  get '/notifications/dropdown_items'      => 'application#gone'
+  get '/u/:key(/:stub)'                    => 'application#gone'
+  get '/g/:key/membership_requests/new'    => 'application#gone'
+  get '/comments/:id'                      => 'application#gone'
 
   get '/donate', to: redirect('https://loomio-donation.chargify.com/subscribe/9wnjv4g2cc9t/donation')
 end

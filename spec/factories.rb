@@ -1,8 +1,10 @@
-FactoryGirl.define do  factory :blog_story do
+FactoryGirl.define do
+
+  factory :blog_story do
     title "MyString"
-url "MyString"
-image_url "MyString"
-published_at "2015-11-18 14:28:30"
+    url "MyString"
+    image_url "MyString"
+    published_at "2015-11-18 14:28:30"
   end
 
   factory :blacklisted_password do
@@ -55,12 +57,9 @@ published_at "2015-11-18 14:28:30"
       if group.parent.present?
         group.parent.admins << user
       end
-      group.subscription = build(:subscription) if group.is_parent?
       group.admins << user
       group.save!
     end
-    max_size 300
-    setup_completed_at 1.hour.ago
   end
 
   factory :discussion do
@@ -223,10 +222,6 @@ published_at "2015-11-18 14:28:30"
     cover_photo_updated_at { 10.days.ago }
   end
 
-  factory :subscription do
-    kind :trial
-  end
-
   factory :draft do
     user
     association :draftable, factory: :discussion
@@ -242,6 +237,62 @@ published_at "2015-11-18 14:28:30"
   factory :access_token, class: Doorkeeper::AccessToken do
     resource_owner_id { create(:user).id }
     association :application, factory: :application
+  end
+
+  factory :poll_option do
+    name "Plan A"
+  end
+
+  factory :poll do
+    poll_type "poll"
+    title "This is a poll"
+    details "with a description"
+    association :author, factory: :user
+    poll_option_names ["engage"]
+
+    after(:build) { |poll| poll.community_of_type(:email, build: true).save }
+  end
+
+  factory :poll_proposal, class: Poll do
+    poll_type "proposal"
+    title "This is a proposal"
+    details "with a description"
+    association :author, factory: :user
+    poll_option_names %w[agree abstain disagree block]
+
+    after(:build) { |poll| poll.community_of_type(:email, build: true) }
+  end
+
+  factory :outcome do
+    poll
+    association :author, factory: :user
+    statement "An outcome"
+  end
+
+  factory :stance do
+    poll
+    association :participant, factory: :user
+  end
+
+  factory :stance_choice do
+    poll_option
+  end
+
+  factory :community, class: Communities::Base do
+    community_type 'test'
+  end
+
+  factory :public_community, class: Communities::Public
+  factory :email_community, class: Communities::Email
+
+  factory :loomio_group_community, class: Communities::LoomioGroup do
+    group
+  end
+
+  factory :visitor do
+    association :community, factory: :public_community
+    name "John Doe"
+    email "john@doe.com"
   end
 
 end

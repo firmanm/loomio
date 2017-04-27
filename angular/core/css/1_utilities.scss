@@ -43,6 +43,18 @@
   font-weight: bold;
 }
 
+.lmo-inline-action {
+  min-width: 40px;
+  margin: 0;
+  padding: 0;
+  line-height: 48px;
+}
+
+.lmo-inline-action .material-icons {
+  line-height: 48px;
+  display: block;
+}
+
 .nowrap{
   white-space: nowrap;
 }
@@ -120,21 +132,24 @@
 }
 
 .lmo-markdown-wrapper {
+  p {
+    @include md-body-1;
+  }
   img { max-width: 100%; }
   h1 {
     @include fontLarge;
-    @include fontHelveticaBold;
+    // @include fontWeightBold;
     margin: 20px 0 10px 0;
   }
   h2 {
     @include fontMedLarge;
-    @include fontHelveticaBold;
+    // @include fontWeightBold;
   }
   h3 {
-    @include fontHelveticaBold;
+    // @include fontWeightBold;
   }
   h4 {
-    @include fontHelveticaBold;
+    // @include fontWeightBold;
   }
   ul{
     padding: 0 0 10px 24px;
@@ -144,6 +159,11 @@
   }
   blockquote{
     font-size: inherit;
+  }
+  table {
+    table-layout: fixed;
+    width: 100%;
+    margin-bottom: 10px;
   }
   table td {
     padding: 6px 13px;
@@ -177,6 +197,11 @@
 .lmo-box--featured {
   text-align: center;
   @include boxFeatured;
+}
+
+.lmo-box--medium-circular {
+  border-radius: 50% !important;
+  @include boxMediumCircular;
 }
 
 .lmo-rounded-corners {
@@ -240,10 +265,6 @@
   text-align: center;
 }
 
-textarea.form-control {
-  max-height: 400px;
-}
-
 .option-icon {
   /* a helper class to display inline icons and avatars */
   margin: 5px 5px 5px 0;
@@ -264,13 +285,44 @@ textarea.form-control {
   display: none;
 }
 
-img.emojione {
-  width: 25px;
-  height: 25px;
+.lmo-group-theme-padding {
+  padding-top: $navbar-height;
 }
 
-.modal-content {
-  background-color: $modal-background-color;
+.lmo-search-container {
+  border-radius: 2px;
+  display: block;
+  height: 40px;
+  position: relative;
+  overflow: visible;
+  min-width: 190px;
+  margin: 0 !important;
+}
+
+.lmo-search-container i {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+}
+
+.lmo-search-container input {
+  font-size: 14px;
+  box-sizing: border-box;
+  border: none;
+  box-shadow: none;
+  outline: 0;
+  background: 0 0;
+  width: 100%;
+  padding: 0 15px 0 35px;
+  line-height: 40px;
+  height: 40px;
+}
+
+img.emojione {
+  position: relative;
+  top: 5px;
+  width: 20px;
+  height: 20px;
 }
 
 @keyframes fadeIn {

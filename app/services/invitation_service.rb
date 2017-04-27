@@ -5,7 +5,7 @@ class InvitationService
     args[:intent] = 'start_group'
     args[:invitable] = args[:group]
     args.delete(:group)
-    Invitation.create(args)
+    Invitation.create!(args)
   end
 
   def self.create_invite_to_join_group(args)
@@ -13,14 +13,34 @@ class InvitationService
     args[:intent] = 'join_group'
     args[:invitable] = args[:group]
     args.delete(:group)
-    Invitation.create(args)
+    Invitation.create!(args)
+  end
+
+  def self.invite_creator_to_group(group:, creator:)
+    InvitePeopleMailer.delay(priority: 1).to_start_group(
+      invitation: InvitationService.create_invite_to_start_group(
+        group:           group,
+        inviter:         User.helper_bot,
+        recipient_email: creator.email,
+        recipient_name:  creator.name
+      )
+    )
   end
 
   def self.invite_to_group(recipient_emails: nil,
                            message: nil,
                            group: nil,
                            inviter: nil)
-    (recipient_emails - group.members.pluck(:email)).map do |recipient_email|
+
+    emails = (recipient_emails - group.members.pluck(:email)).take(100)
+
+    recent_pending_invitations_count = group.pending_invitations.where("created_at > ?", 2.weeks.ago).count
+    num_used = recent_pending_invitations_count + emails.length
+    max_allowed = ENV.fetch('MAX_PENDING_INVITATIONS', 100).to_i + group.memberships_count
+
+    raise "Too many pending invitations - group_id: #{group.id} #{group.name}" if num_used > max_allowed
+
+    emails.map do |recipient_email|
       invitation = create_invite_to_join_group(recipient_email: recipient_email,
                                                group: group,
                                                message: message,

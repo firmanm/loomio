@@ -5,10 +5,12 @@ angular.module('loomioApp').factory 'DiscussionModel', (DraftableModel, AppConfi
     @uniqueIndices: ['id', 'key']
     @indices: ['groupId', 'authorId']
     @draftParent: 'group'
+    @draftPayloadAttributes: ['title', 'description']
     @serializableAttributes: AppConfig.permittedParams.discussion
 
     afterConstruction: ->
       @private = @privateDefaultValue() if @isNew()
+      @newAttachmentIds = _.clone(@attachmentIds) or []
 
     defaultValues: =>
       private: null
@@ -18,6 +20,11 @@ angular.module('loomioApp').factory 'DiscussionModel', (DraftableModel, AppConfi
       lastItemAt: null
       title: ''
       description: ''
+
+    serialize: ->
+      data = @baseSerialize()
+      data.discussion.attachment_ids = @newAttachmentIds
+      data
 
     privateDefaultValue: =>
       if @group()
@@ -32,6 +39,7 @@ angular.module('loomioApp').factory 'DiscussionModel', (DraftableModel, AppConfi
       @hasMany 'comments', sortBy: 'createdAt'
       @hasMany 'events', sortBy: 'sequenceId'
       @hasMany 'proposals', sortBy: 'createdAt', sortDesc: true
+      @hasMany 'polls', sortBy: 'createdAt', sortDesc: true
       @hasMany 'versions', sortBy: 'createdAt'
       @belongsTo 'group'
       @belongsTo 'author', from: 'users'
@@ -63,22 +71,45 @@ angular.module('loomioApp').factory 'DiscussionModel', (DraftableModel, AppConfi
     hasActiveProposal: ->
       @activeProposal()?
 
+    activePolls: ->
+      _.filter @polls(), (poll) ->
+        poll.isActive()
+
+    hasActivePoll: ->
+      _.any @activePolls()
+
+    hasDecision: ->
+      @hasActiveProposal() or @hasActivePoll()
+
+    closedPolls: ->
+      _.filter @polls(), (poll) ->
+        !poll.isActive()
+
+    activePoll: ->
+      _.first @activePolls()
+
     isUnread: ->
+      !@isDismissed() and
       @discussionReaderId? and (!@lastReadAt? or @unreadActivityCount() > 0)
+
+    isDismissed: ->
+      @discussionReaderId? and @dismissedAt? and @dismissedAt.isSameOrAfter(@lastActivityAt)
 
     hasUnreadActivity: ->
       @isUnread() && @unreadActivityCount() > 0
 
+    hasContext: ->
+      !!@description
+
     isImportant: ->
-      @starred or @hasActiveProposal()
+      @starred or @hasDecision()
 
     unreadActivityCount: ->
       @salientItemsCount - @readSalientItemsCount
 
-    eventIsLoaded: (event) ->
-      event.sequenceId or
-      _.find @events(), (e) ->
-        e.kind == 'new_comment' and e.commentId == event.comment().id
+    requireReloadFor: (event) ->
+      return false if !event or event.discussionId != @id or event.sequenceId
+      _.find @events(), (e) -> e.kind == 'new_comment' and e.eventable.id == event.eventable.id
 
     minLoadedSequenceId: ->
       item = _.min @events(), (event) -> event.sequenceId or Number.MAX_VALUE
@@ -87,6 +118,9 @@ angular.module('loomioApp').factory 'DiscussionModel', (DraftableModel, AppConfi
     maxLoadedSequenceId: ->
       item = _.max @events(), (event) -> event.sequenceId or 0
       item.sequenceId
+
+    allEventsLoaded: ->
+      @recordStore.events.find(discussionId: @id).length == @itemsCount
 
     membership: ->
       @recordStore.memberships.find(userId: AppConfig.currentUserId, groupId: @groupId)[0]
@@ -122,11 +156,24 @@ angular.module('loomioApp').factory 'DiscussionModel', (DraftableModel, AppConfi
         @remote.patchMember @keyOrId(), 'mark_as_read', sequence_id: sequenceId
         @update(lastReadAt: moment(), lastReadSequenceId: sequenceId)
 
+    dismiss: ->
+      @remote.patchMember @keyOrId(), 'dismiss'
+      @update(dismissedAt: moment())
+
     move: =>
       @remote.patchMember @keyOrId(), 'move', { group_id: @groupId }
 
     edited: ->
       @versionsCount > 1
+
+    newAttachments: ->
+      @recordStore.attachments.find(@newAttachmentIds)
+
+    attachments: ->
+      @recordStore.attachments.find(attachableId: @id, attachableType: 'Discussion')
+
+    hasAttachments: ->
+      _.some @attachments()
 
     attributeForVersion: (attr, version) ->
       return '' unless version
@@ -134,3 +181,9 @@ angular.module('loomioApp').factory 'DiscussionModel', (DraftableModel, AppConfi
         version.changes[attr][1]
       else
         @attributeForVersion(attr, @recordStore.versions.find(version.previousId))
+
+    cookedDescription: ->
+      cooked = @description
+      _.each @mentionedUsernames, (username) ->
+        cooked = cooked.replace(///@#{username}///g, "[[@#{username}]]")
+      cooked

@@ -1,0 +1,10 @@
+uk:
+  navigation:
+    blog: Блог
+    resources: Ресурси
+    help: Допомога
+    login: Увійти
+    privacy: Конфіденційність
+  titles:
+    sign_in: Форма входу
+    home: На головну

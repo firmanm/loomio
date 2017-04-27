@@ -1,17 +1,17 @@
-angular.module('loomioApp').factory 'DraftService', ($timeout) ->
+angular.module('loomioApp').factory 'DraftService', ($timeout, AppConfig) ->
   new class DraftService
 
-    applyDrafting: (scope, model, watchFields) ->
+    applyDrafting: (scope, model) ->
       draftMode = ->
         model[model.constructor.draftParent]() && model.isNew()
 
       timeout = $timeout(->)
       scope.$watch ->
-        _.map watchFields, (field) -> model[field]
+        _.pick(model, model.constructor.draftPayloadAttributes)
       , ->
         return unless draftMode()
         $timeout.cancel(timeout)
-        timeout = $timeout((-> model.updateDraft()), 300)
+        timeout = $timeout((-> model.updateDraft()), AppConfig.drafts.debounce)
       , true
 
       scope.restoreDraft = ->

@@ -54,16 +54,14 @@ eo:
     edit_comment: Redakti komenton
     delete_comment: Forigi komenton
     confirm_delete_message: 'Ĉu vi certas, ke vi volas forigi tiun ĉi komenton?'
-  navbar:
+  sidebar:
     recent: Lastaj
     unread: Nelegitaj
-    groups: Grupoj
-    user_options:
-      contact_us: Kontakti nin
-      new_thread: Nova fadeno
-      new_group: Nova grupo
-      profile: Profilo
-      help: Helpo
+    edit_profile: Redakti profilon
+    email_settings: Retpoŝtaj agordoj
+    help: Helpo
+    sign_out: Eliri
+  navbar:
     search:
       placeholder: Serĉi
       discussions: Diskutoj
@@ -106,7 +104,6 @@ eo:
     heading: Peti aliĝon al la grupo
     name_label: Nomo
     email_label: Retpoŝto
-    introduction_label: Enkonduku vin
     submit_button: Peti aliĝon al la grupo
   group_page:
     thread_list:
@@ -118,8 +115,6 @@ eo:
     options_label: Opcioj
     options:
       label: Opcioj
-    leave_group:
-      title: Elirii grupon
   membership_requests_page:
     approve: Aprobi
     ignore: Ignori
@@ -128,18 +123,7 @@ eo:
     name_label: Nomo
     coordinator_label: Kunordiganto
     remove_member_label: Forviŝi
-    remove_membership:
-      submit: Forviŝi
   profile_page:
-    change_picture:
-      use_initials: Uzi unuajn literojn de nomo
-    change_password:
-      current_password_label: Nuna pasvorto
-      new_password_label: Nova pasvorto
-      password_confirmation_label: Konfirmi novan pasvorton
-    deactivate_user:
-      title: Malaktivigi konton
-      submit: Malaktivigi konton
     profile: Profilo
     picture_label: Bildo
     name_label: Nomo
@@ -147,9 +131,10 @@ eo:
     locale_label: Lingvo
   dashboard_page:
     aria_label: Supervidpanelo
+    no_groups:
+      or: aŭ
     no_threads:
       show_all: Vi ne havas lastatempajn fadenojn.
-      show_participating: Vi laste ne partoprenis en ajnaj fadenoj.
     view_recent: Ĉu vidi ĉiujn lastatempajn fadenojn?
     mark_as_read: Marki kiel legita
     filtering:
@@ -159,6 +144,9 @@ eo:
     threads_from:
       today: Hodiaŭ
       yesterday: Hieraŭ
+  inbox_page:
+    no_groups:
+      or: aŭ
   thread_group:
     aria_label: Grupnomo
   delete_comment_dialog:
@@ -187,36 +175,6 @@ eo:
 
       por helpi vian grupon sukcesi:
     different_ways: Malsamaj manieroj por uzi Loomion
-    engaging_html: >
-      <h2>Konsiloj por engaĝigi vian grupon</h2>
-
-      <p>Oni ekscitiĝos ensalti kaj komenci partopreni se estas engaĝiga propono
-      sur la
-
-      tablo. Bona propono enhavas agoplanon por la grupo, por ke tuj estu klare
-      kion
-
-      signifas konsenti aŭ malkonsenti. Pripensu kiel vi povas identigi
-      diskutojn/decidojn
-
-      pri kiuj la grupo nun interkonsentiĝas persone aŭ retpoŝte por kiuj pli
-      facilus se ili
-
-      estus en Loomio.</p>
-
-      <p>Se via grupo ĵus komenciĝis, vi povus komenci per facilanima decido, por
-      doni
-
-      al ĉiuj la ŝancon ludi per la ilo kaj mem vidi la decidadon dum ĝi
-      okazas.</p>
-
-      <p>Alia simpla maniero por kuraĝigi personojn engaĝiĝi en diskuto estas uzi
-      la eblo
-
-      @mencii por indiki specifajn personojn; tio sendos retpoŝton al il por diri
-      ke ili estas
-
-      menciitaj en komento.</p>
     example1_html: >
       <h3>Vi bezonas ke la grupo diskutu larĝan temon kaj kune pripensu
       solvon</h3>
@@ -228,20 +186,6 @@ eo:
 
       pri la problemo antaŭ ol salti al specifa solvo. Kiam homoj partoprenas en
       la proceso, ili multe pli verŝajne konsentos kun la konkludo.</p>
-    example2_html: >
-      <h3>Vi jam pripensis proponon, kaj vi volas havi subtenon de la grupo por
-      antaŭeniri kun ĝi.</h3>
-
-      <p>Strategio: komencu diskuton pri specifa decido kaj tuj faru
-      proponon.</p>
-
-      <p>Se vi imagas klaran konkludon sed vi volas certigi ke ne estas esencaj
-      problemoj,
-
-      vi povas uzi la proponon por rapide havi retrokuplon pri decido.</p>
-
-      <p>Vi povas fari aferojn kiel finigi dokumenton, aprobi peton, aŭ
-      konsentigi laborpecon.</p>
     get_in_touch: Ekkontakti
     get_in_touch_description_html: "Se vi havas ajnajn demandojn aŭ retrokuplon, <a href='%{link}'>kontaktu nin</a>"
     getting_started: Ekkomenci
@@ -312,7 +256,6 @@ eo:
     positions_disagree_description: '<span>Malkonsento</span> volas diri ke vi pensas ke eble estas pli bona alternativo, sed vi pretas iri kun la grupa decido.'
     positions_block_description: '<span>Blokado</span> volas diri ke vi serioze obĵetas kaj ke vi tre malfeliĉos se ĉi tiu propono estos efektigata.'
     start_discussion: Komence de egaĝiĝa diskuto
-    start_discussion_html: "<p>Kiam vi starigas diskuton, certiĝu ke la titolo indikas malmultvorte pri kio ĝi temas.  \nUzu la Kunteksto-Panelo por doni  ĉ.iujn fonajn informojn bezonatajn por ke la grupo havu produktivan kaj bone informitan diskuton,</p>\n<p>Dum la diskutado, la Kunteksto-Panelo povas esti ĝisdatigita kiam novaj informoj aperas.  Vi povs uzi tiun ĉ.i spacon ne nur por klarigi la temon, sed ankaŭ  por dividi utilajn informfontojn, resumi la diksuton dum ĝi progresas aŭ  por skizi la decido-faran proceduron uzatan de la grupo..</p>\n"
     start_proposal: Verkante klaran proponon
     start_proposal_html: >
       <p> Farante la titolon klara kaj mallonga, homoj tuj scios kion signifas

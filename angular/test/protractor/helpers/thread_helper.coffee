@@ -1,24 +1,21 @@
 module.exports = new class ThreadHelper
   load: ->
-    browser.get('development/setup_discussion')
+    browser.get('dev/setup_discussion')
 
   loadWithPublicContent: ->
-    browser.get('development/setup_public_group_with_public_content')
+    browser.get('dev/setup_public_group_with_public_content')
 
   loadWithActiveProposal: ->
-    browser.get('development/setup_proposal')
-
-  loadWithActiveProposalWithVotes: ->
-    browser.get('development/setup_proposal_with_votes')
+    browser.get('dev/setup_proposal')
 
   loadWithClosedProposal: ->
-    browser.get('development/setup_closed_proposal')
+    browser.get('dev/setup_closed_proposal')
 
   loadWithSetOutcome: ->
-    browser.get('development/setup_closed_proposal_with_outcome')
+    browser.get('dev/setup_closed_proposal_with_outcome')
 
   loadWithMultipleDiscussions: ->
-    browser.get('development/setup_multiple_discussions')
+    browser.get('dev/setup_multiple_discussions')
 
   addComment: (body) ->
     @enterCommentText(body)
@@ -85,13 +82,13 @@ module.exports = new class ThreadHelper
     @mentionList().element(By.css('li'))
 
   clickThreadOptionsDropdownButton: ->
-    element(By.css('.thread-context__dropdown-button')).click()
+    element(By.css('.context-panel__dropdown-button')).click()
 
   clickThreadOptionsDropdownEdit: ->
-    element(By.css('.thread-context__dropdown-options-edit')).click()
+    element(By.css('.context-panel__dropdown-options--edit')).click()
 
   clickThreadOptionsDropdownMove: ->
-    element(By.css('.thread-context__dropdown-options-move')).click()
+    element(By.css('.context-panel__dropdown-options-move')).click()
 
   threadTitleInput: ->
     element(By.css('.discussion-form__title-input')).clear().sendKeys('Edited thread title')
@@ -137,44 +134,22 @@ module.exports = new class ThreadHelper
     element(By.css('.activity-card')).getText()
 
   openThreadOptionsDropdown: ->
-    element(By.css('.thread-context__dropdown-button')).click()
-
-  openEditThreadForm: ->
-    @openThreadOptionsDropdown()
-    element(By.css('.thread-context__dropdown-options-edit')).click()
+    element(By.css('.context-panel__dropdown-button')).click()
 
   groupTitle: ->
     element(By.css('.group-theme__name--compact')).getText()
 
   discussionTitle: ->
-    element(By.css('.thread-context')).getText()
+    element(By.css('.context-panel')).getText()
 
   selectDeleteThreadOption: ->
-    element(By.css('.thread-context__dropdown-options-delete')).click()
+    element(By.css('.context-panel__dropdown-options--delete')).click()
 
   confirmThreadDeletion: ->
     element(By.css('.delete_thread_form__submit')).click()
 
   threadOptionsDropdown: ->
-    element(By.css('.thread-context__dropdown'))
-
-  volumeOptions: ->
-    element(By.css('.notification-volume'))
+    element(By.css('.context-panel__dropdown'))
 
   angularFeedbackCard: ->
     element(By.css('#angular-feedback-card'))
-
-  threadVolumeCard: ->
-    element(By.css('.thread-volume-card')).getText()
-
-  clickChangeInThreadVolumeCard: ->
-    element(By.css('.thread-volume-card__change-volume-link')).click()
-
-  changeThreadVolumeToLoud: ->
-    element(By.id('volume-loud')).click()
-
-  submitChangeVolumeForm: ->
-    element(By.css('.change-volume-form__submit')).click()
-
-  signInButton: ->
-    element(By.css('.lmo-navbar__sign-in')).getText()

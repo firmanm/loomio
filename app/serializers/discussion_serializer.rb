@@ -43,13 +43,15 @@ class DiscussionSerializer < ActiveModel::Serializer
                          :last_read_sequence_id,
                          :discussion_reader_volume,
                          :last_read_at,
+                         :dismissed_at,
                          :participating,
                          :starred
 
-  has_one :author, serializer: UserSerializer, root: 'users'
-  has_one :group, serializer: GroupSerializer, root: 'groups'
-  has_one :active_proposal, serializer: MotionSerializer, root: 'proposals'
-  has_one :active_proposal_vote, serializer: VoteSerializer, root: 'votes'
+  has_one :author, serializer: UserSerializer, root: :users
+  has_one :group, serializer: GroupSerializer, root: :groups
+  has_one :active_proposal, serializer: MotionSerializer, root: :proposals
+  has_one :active_proposal_vote, serializer: VoteSerializer, root: :votes
+  has_many :active_polls, serializer: PollSerializer, root: :polls
 
   def include_active_proposal_vote?
     reader.present? && active_proposal.present?
@@ -61,6 +63,14 @@ class DiscussionSerializer < ActiveModel::Serializer
 
   def active_proposal
     @active_proposal ||= object.current_motion
+  end
+
+  def active_polls
+    scope[:poll_cache].get_for(object)
+  end
+
+  def include_active_polls?
+    scope[:poll_cache].present?
   end
 
   def reader
